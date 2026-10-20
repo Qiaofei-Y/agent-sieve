@@ -39,6 +39,12 @@ Sieve 从网络侧检测 **AI / agent 的异常行为**——不是看它读了�
 > 另有一条并行的**入站线** [`sieve-s1/`](sieve-s1/)：对你公网暴露服务的访问日志，核验自称 AI 爬虫（UA 含 GPTBot / ClaudeBot / PerplexityBot 等）的请求是否真属该厂商（威胁模型 A）。
 > 两线数据源与方向不同，互补而不汇入 S3。
 
+## 🖥 预览
+
+![Sieve 信源治理控制台（示例数据）](docs/images/console-zh.png)
+
+> 信源治理控制台设计稿（示例数据）——总览、每日摄入、风险发现、域名可信度、以及底部的**跨租户信誉库**面板。源文件 [`docs/sieve-console.html`](docs/sieve-console.html)（中英双语，右上角切换）。
+
 ## ⚡ 60 秒上手（无需任何基础设施）
 
 ```bash

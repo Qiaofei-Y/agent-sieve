@@ -41,6 +41,12 @@ collect             score                   merge          alert
 > A parallel **inbound line**, [`sieve-s1/`](sieve-s1/), checks your public-facing services' access logs: it verifies whether requests that claim to be AI crawlers (UA containing GPTBot / ClaudeBot / PerplexityBot, etc.) really belong to the vendor (threat model A).
 > The two lines differ in data source and direction — complementary, and S1 does not feed into S3.
 
+## 🖥 Preview
+
+![Sieve Source-Trust Console (sample data)](docs/images/console-en.png)
+
+> Source-trust console design (sample data) — overview, daily ingestion, risk findings, domain trust distribution, and the **cross-tenant reputation DB** panel at the bottom. Source: [`docs/sieve-console.en.html`](docs/sieve-console.en.html) (bilingual, toggle top-right).
+
 ## ⚡ 60-second start (no infrastructure needed)
 
 ```bash
