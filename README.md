@@ -11,6 +11,8 @@
 [![deps: stdlib only](https://img.shields.io/badge/deps-stdlib%20only-0d7268)](#依赖)
 [![status: prototype](https://img.shields.io/badge/status-prototype-eda100)](#路线图)
 
+**简体中文** · [English](README.en.md)
+
 </div>
 
 ---
