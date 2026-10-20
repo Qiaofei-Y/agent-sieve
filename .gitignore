@@ -22,3 +22,10 @@ sieve-verify/labels.json
 *.swp
 .idea/
 .vscode/
+
+# sieve-s1 runtime
+sieve-s1/.cache/
+sieve-s1/sieve_s1_state.json
+
+# agent worktrees
+.claude/
