@@ -1,0 +1,479 @@
+<title>Agent Trace Hunting Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --plane:#eef1f0; --surface:#ffffff; --surface-2:#f7faf9; --surface-3:#eef2f1;
+  --ink:#0e1412; --ink-2:#4b5551; --ink-3:#838d89;
+  --rule:#e0e6e4; --rule-2:#cdd5d2;
+  --accent:#0d7268; --accent-deep:#084f48; --accent-wash:#e2efed; --on-accent:#fff;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-wash:#e7f6e7; --warning-wash:#fdf3dd; --serious-wash:#fceee7; --critical-wash:#fae6e6;
+  --ink-amber:#8a5f02; --ink-serious:#b9542a; --ink-good:#0a7a0a;
+  /* vantage hues (validated categorical slots) */
+  --v-dns:#2a78d6; --v-flow:#1baf7a; --v-tls:#eda100; --v-host:#e87ba4;
+  --shadow:0 1px 2px rgba(14,20,18,.05); --shadow-pop:0 6px 22px rgba(14,20,18,.14);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783;
+  --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --serious-wash:#33201a; --critical-wash:#331616;
+  --ink-amber:#f0c45a; --ink-serious:#ec835a; --ink-good:#4ec94e;
+  --v-dns:#3987e5; --v-flow:#199e70; --v-tls:#c98500; --v-host:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783;
+  --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --serious-wash:#33201a; --critical-wash:#331616;
+  --ink-amber:#f0c45a; --ink-serious:#ec835a; --ink-good:#4ec94e;
+  --v-dns:#3987e5; --v-flow:#199e70; --v-tls:#c98500; --v-host:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:14.5px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+.mono{ font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+.tnum{ font-variant-numeric:tabular-nums; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+@media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+
+.wrap{ max-width:940px; margin:0 auto; padding-inline:20px; padding-block:0 72px; }
+
+/* ── masthead ─────────────────────────────── */
+.mast{ border-bottom:1px solid var(--rule); padding-block:30px 22px; margin-bottom:26px;
+  display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+.logo{ width:40px; height:40px; border-radius:10px; background:var(--accent); flex:none;
+  display:grid; place-items:center; box-shadow:var(--shadow); }
+.eyebrow{ font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-deep); }
+.mast h1{ font-size:27px; font-weight:700; letter-spacing:-.02em; margin:3px 0 7px; text-wrap:balance; }
+.mast .lede{ margin:0; color:var(--ink-2); font-size:14.5px; max-width:64ch; }
+.mast .meta{ margin-top:12px; display:flex; gap:7px 16px; flex-wrap:wrap; font-size:12px; color:var(--ink-3); }
+.mast .meta b{ color:var(--ink-2); font-weight:600; }
+.themebtn{ margin-left:auto; border:1px solid var(--rule-2); background:var(--surface); color:var(--ink-2);
+  font-family:inherit; font-size:12px; font-weight:500; height:30px; padding:0 11px; border-radius:7px;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.themebtn:hover{ border-color:var(--accent); color:var(--ink); }
+
+.note{ background:var(--warning-wash); border:1px solid color-mix(in srgb,var(--warning) 36%,transparent);
+  border-radius:9px; padding:12px 15px; font-size:13px; color:var(--ink-2); margin-bottom:30px;
+  display:flex; gap:10px; }
+.note b{ color:var(--ink); }
+.note svg{ flex:none; color:var(--warning); margin-top:1px; }
+
+/* ── sections ─────────────────────────────── */
+section{ margin-bottom:38px; scroll-margin-top:16px; }
+.sec-h{ display:flex; align-items:baseline; gap:11px; margin-bottom:4px; }
+.sec-n{ font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--accent);
+  border:1px solid var(--accent); border-radius:6px; padding:1px 7px; flex:none; }
+h2{ font-size:20px; font-weight:700; letter-spacing:-.015em; margin:0; text-wrap:balance; }
+.sec-sub{ color:var(--ink-3); font-size:13px; margin:2px 0 18px 46px; }
+h3{ font-size:15px; font-weight:600; margin:24px 0 8px; letter-spacing:-.005em; }
+p{ margin:0 0 12px; color:var(--ink-2); }
+strong{ color:var(--ink); font-weight:600; }
+
+/* ── vantage cards ────────────────────────── */
+.vantages{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.vcard{ background:var(--surface); border:1px solid var(--rule); border-radius:11px; padding:15px 16px; box-shadow:var(--shadow);
+  border-top:3px solid var(--vc); }
+.vcard.dns{ --vc:var(--v-dns); } .vcard.flow{ --vc:var(--v-flow); }
+.vcard.tls{ --vc:var(--v-tls); } .vcard.host{ --vc:var(--v-host); }
+.vcard-h{ display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+.vtag{ font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:#fff; background:var(--vc);
+  padding:2px 7px; border-radius:5px; letter-spacing:.02em; }
+.vcard h3{ margin:0; font-size:14.5px; }
+.vcard .cost{ margin-left:auto; font-size:11.5px; color:var(--ink-3); }
+.vcard p{ font-size:13px; margin:0 0 9px; }
+.vcard ul{ margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-2); }
+.vcard li{ margin-bottom:3px; }
+.vcard li::marker{ color:var(--vc); }
+.seen{ display:flex; gap:12px; margin-top:10px; padding-top:10px; border-top:1px solid var(--rule); font-size:11.5px; }
+.seen div{ flex:1; }
+.seen .k{ color:var(--ink-3); display:block; margin-bottom:2px; letter-spacing:.03em; }
+.seen .yes{ color:var(--ink-good); font-weight:500; }
+.seen .no{ color:var(--ink-serious); font-weight:500; }
+
+/* ── stage timeline ───────────────────────── */
+.stages{ display:flex; flex-direction:column; gap:0; }
+.stage{ display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; padding-block:16px; border-top:1px solid var(--rule); }
+.stage:first-child{ border-top:0; }
+.stage-badge{ display:flex; flex-direction:column; gap:5px; }
+.stage-no{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px; color:var(--accent-deep);
+  background:var(--accent-wash); border-radius:6px; padding:3px 0; text-align:center; }
+.stage-time{ font-size:11px; color:var(--ink-3); text-align:center; }
+.stage-body h3{ margin:0 0 5px; }
+.stage-body p{ margin:0 0 9px; font-size:13.5px; }
+.catch{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+  padding:2px 8px; border-radius:20px; background:var(--good-wash); color:var(--ink-good); margin:0 5px 5px 0; }
+
+/* ── code ─────────────────────────────────── */
+pre{ background:var(--surface-3); border:1px solid var(--rule); border-radius:9px; padding:13px 15px;
+  overflow-x:auto; margin:10px 0 14px; }
+code.blk{ font-family:"IBM Plex Mono",monospace; font-size:12.5px; line-height:1.72; color:var(--ink); white-space:pre; }
+.cmt{ color:var(--ink-3); }
+.kw{ color:var(--accent-deep); } :root[data-theme="dark"] .kw,:root:not([data-theme="light"]) .kw{ color:var(--accent-deep); }
+.str{ color:var(--ink-serious); }
+code.inl{ font-family:"IBM Plex Mono",monospace; font-size:.9em; background:var(--surface-3);
+  padding:1px 5px; border-radius:4px; color:var(--ink); }
+
+/* ── matrix table ─────────────────────────── */
+.scrollx{ overflow-x:auto; border:1px solid var(--rule); border-radius:11px; box-shadow:var(--shadow); }
+table.mx{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:720px; background:var(--surface); }
+.mx thead th{ font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);
+  text-align:left; padding:11px 13px; border-bottom:1px solid var(--rule-2); background:var(--surface-2); white-space:nowrap; }
+.mx td{ padding:11px 13px; border-bottom:1px solid var(--rule); vertical-align:top; }
+.mx tbody tr:last-child td{ border-bottom:0; }
+.mx tbody tr:hover{ background:var(--surface-2); }
+.tid{ font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--accent-deep); white-space:nowrap; }
+.mx .atk{ color:var(--ink); font-weight:500; }
+.mx .atk small{ display:block; color:var(--ink-3); font-weight:400; font-size:11px; margin-top:2px; }
+.vpill{ display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; color:#fff;
+  padding:1px 6px; border-radius:4px; margin:0 3px 3px 0; }
+.vpill.dns{ background:var(--v-dns); } .vpill.flow{ background:var(--v-flow); }
+.vpill.tls{ background:var(--v-tls); } .vpill.host{ background:var(--v-host); }
+.evade{ color:var(--ink-serious); font-size:11.5px; }
+
+/* severity dots for threat model */
+.tm{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.tmc{ background:var(--surface); border:1px solid var(--rule); border-radius:11px; padding:14px 15px; box-shadow:var(--shadow); }
+.tmc .lab{ font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:16px; }
+.tmc.a .lab{ color:var(--good); } .tmc.b .lab{ color:var(--warning); } .tmc.c .lab{ color:var(--critical); }
+.tmc h3{ margin:4px 0 6px; font-size:14px; }
+.tmc p{ font-size:12.5px; margin:0 0 9px; }
+.diff{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.diff.easy{ color:var(--ink-good); } .diff.med{ color:var(--ink-amber); } .diff.hard{ color:var(--ink-serious); }
+
+ul.clean{ margin:0 0 12px; padding-left:19px; color:var(--ink-2); }
+ul.clean li{ margin-bottom:5px; }
+ul.clean li::marker{ color:var(--accent); }
+
+.scoring{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:8px 0 4px; }
+.sch{ background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:12px 13px; box-shadow:var(--shadow); }
+.sch .w{ font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:18px; color:var(--accent-deep); }
+.sch .t{ font-size:12.5px; font-weight:600; margin:2px 0 3px; }
+.sch .d{ font-size:11.5px; color:var(--ink-3); }
+
+.foot{ border-top:1px solid var(--rule); margin-top:12px; padding-top:18px; font-size:12.5px; color:var(--ink-3); }
+.foot a{ color:var(--accent); }
+
+@media (max-width:720px){
+  .vantages,.tm{ grid-template-columns:minmax(0,1fr); }
+  .stage{ grid-template-columns:1fr; gap:8px; }
+  .stage-badge{ flex-direction:row; gap:8px; align-items:center; }
+  .stage-no,.stage-time{ text-align:left; }
+  .sec-sub{ margin-left:0; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>
+    </div>
+    <div style="min-width:0;flex:1">
+      <div class="eyebrow">Sieve Homelab · Purple Team Playbook</div>
+      <h1>AI / Agent Intrusion Traces: A Self-Test Purple Team Playbook</h1>
+      <p class="lede">On your own home or corporate network, stand up detection vantage points at minimal cost, then play the attacker yourself to verify whether "anomalous AI/agent behavior" can actually be caught — and what can slip past it. From the defender's (blue team) point of view.</p>
+      <div class="meta">
+        <span><b>Scope</b> Only networks you own or are authorized to test</span>
+        <span><b>Approach</b> Purple Team · attack and detect yourself</span>
+        <span><b>Updated</b> 2026-10-19</span>
+      </div>
+    </div>
+    <button class="themebtn" id="themeBtn" title="Toggle light/dark">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+      Theme
+    </button>
+    <a class="themebtn" href="agent-trace-playbook.html" style="text-decoration:none">中文</a>
+  </header>
+
+  <div class="note">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.1"/><circle cx="12" cy="12" r="9"/></svg>
+    <div><b>Authorization boundary.</b> Every "attack" action in this playbook is run only against your own devices, on a network you own or have written authorization to test, for the purpose of validating detection. Never use any of these steps against third-party networks, other people's devices, or unauthorized targets.</div>
+  </div>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">01</span><h2>First, split "AI intrusion" into three threat models</h2></div>
+    <p class="sec-sub">Their detectability at the network layer differs enormously; lumping them together means you miss the real ones and drown in false positives.</p>
+    <div class="tm">
+      <div class="tmc a">
+        <span class="lab">A</span>
+        <h3>External AI crawlers scraping your services</h3>
+        <p>GPTBot / ClaudeBot / PerplexityBot and friends crawl your internet-facing NAS, blog, or reverse proxy. Includes <strong>spoofed crawlers</strong> — a UA that says GPTBot while the IP is nowhere in the official ranges.</p>
+        <span class="diff easy">Difficulty · Easy</span>
+      </div>
+      <div class="tmc b">
+        <span class="lab">B</span>
+        <h3>Shadow AI exfiltration</h3>
+        <p>Some device or person on the LAN keeps feeding data to an LLM API (<code class="inl">api.openai.com</code> and the like), or a locally running agent is sending content out. The first class you should tackle.</p>
+        <span class="diff med">Difficulty · Medium</span>
+      </div>
+      <div class="tmc c">
+        <span class="lab">C</span>
+        <h3>Autonomous agent / AI-driven intrusion</h3>
+        <p>On the wire it looks <strong>almost identical</strong> to an ordinary scripted intrusion — the AI lives in the attacker's cloud, and what reaches you is just requests. What gives it away is the "machine cadence," not the "AI" itself. Don't overclaim.</p>
+        <span class="diff hard">Difficulty · Hard</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">02</span><h2>Four vantage points, and what each one can see</h2></div>
+    <p class="sec-sub">At the router you only have metadata. Ordered from lowest to highest deployment cost; the colors are reused in the test matrix later.</p>
+    <div class="vantages">
+
+      <div class="vcard dns">
+        <div class="vcard-h"><span class="vtag">DNS</span><h3>Pi-hole / AdGuard Home</h3><span class="cost">Cost · Minimal</span></div>
+        <p>Acting as network-wide DNS, it logs every domain query from every device. The fastest way to catch threat B and local agents that use the system resolver.</p>
+        <ul>
+          <li>Match against a known LLM API / agent domain list</li>
+          <li>Surface never-before-seen new domains (shadow source)</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">Can see</span><span class="yes">the queried domain, which device, how often</span></div>
+          <div><span class="k">Can't see</span><span class="no">clients using DoH/DoT (bypass it outright)</span></div>
+        </div>
+      </div>
+
+      <div class="vcard flow">
+        <div class="vcard-h"><span class="vtag">FLOW</span><h3>Router connection logs / conntrack</h3><span class="cost">Cost · Low</span></div>
+        <p>Per-connection IP:port, byte counts, timestamps. Even when DNS is bypassed, the IP layer still leaves traces — reverse-look up the IP to attribute it to an LLM vendor.</p>
+        <ul>
+          <li>Regular intervals of periodic callbacks (beaconing)</li>
+          <li>Abnormal outbound volume / full-site traversal</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">Can see</span><span class="yes">peer IP, traffic size, cadence</span></div>
+          <div><span class="k">Can't see</span><span class="no">the actual content or specific URL</span></div>
+        </div>
+      </div>
+
+      <div class="vcard tls">
+        <div class="vcard-h"><span class="vtag">TLS</span><h3>Mirror port + Zeek (JA4 fingerprint)</h3><span class="cost">Cost · Medium</span></div>
+        <p>A switch SPAN port mirrors traffic to a Raspberry Pi running Zeek, which extracts the JA4 fingerprint from the TLS handshake — determined by the network stack, immune to a spoofed UA.</p>
+        <ul>
+          <li>The fingerprint of python/Go/curl ≠ a real browser</li>
+          <li>SNI (unless the peer enables ECH), certificates, QUIC</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">Can see</span><span class="yes">whether the client is a script, and the domain it connects to</span></div>
+          <div><span class="k">Can't see</span><span class="no">browser fingerprints spoofed by curl_cffi</span></div>
+        </div>
+      </div>
+
+      <div class="vcard host">
+        <div class="vcard-h"><span class="vtag">HOST</span><h3>Endpoint · OpenSnitch / Little Snitch</h3><span class="cost">Cost · Medium (needs install)</span></div>
+        <p>Where you can install on the endpoint, this is the only vantage point that ties traffic to a <strong>process</strong> — which binary, which script is reaching out.</p>
+        <ul>
+          <li>Per-process outbound allowlist / alerting</li>
+          <li>Content before encryption (visible on the host)</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">Can see</span><span class="yes">the process, command line, full destination</span></div>
+          <div><span class="k">Can't see</span><span class="no">devices that can't run an endpoint (IoT, guest machines)</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">03</span><h2>Two physical limits you must accept up front</h2></div>
+    <p class="sec-sub">Fail to face these two, and every detection that follows is self-deception.</p>
+
+    <h3>① Without MITM you only have metadata</h3>
+    <p>Traffic is TLS-encrypted. Unless you install your root certificate on every device to do man-in-the-middle decryption, you will never see "which page was read, what content was sent." Network-wide MITM is not advisable at home (too destructive, too risky), so position the product as <strong>"anomalous-behavior detection," not "content inspection."</strong></p>
+
+    <h3>② DoH/DoT and ECH are narrowing your view</h3>
+    <ul class="clean">
+      <li><strong>DoH/DoT</strong>: a client with its own encrypted DNS bypasses Pi-hole outright. This is enemy number one — you must block port 853 at the firewall, intercept known DoH resolver domains, and force DNS back into your own hands, or the DNS layer is effectively useless.</li>
+      <li><strong>ECH</strong> (RFC 9849, finalized 2026-03) encrypts the SNI, hiding even the domain. Today almost only Cloudflare has shipped it server-side, so most sites' SNI is still visible — but this is a one-way trend; don't bet your architecture on SNI staying visible.</li>
+      <li><strong>Fingerprints can be forged</strong>: <code class="inl">curl_cffi --impersonate chrome</code> / <code class="inl">tls-client</code> can replicate a browser's JA4. So JA4 catches the lazy agent, not the deliberately disguised one — it's one signal, not a verdict.</li>
+    </ul>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">04</span><h2>Start minimal: a four-stage rollout</h2></div>
+    <p class="sec-sub">Each stage delivers value on its own; you don't have to wait for the full build-out.</p>
+    <div class="stages">
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S0</div><div class="stage-time">One afternoon</div></div>
+        <div class="stage-body">
+          <h3>Pi-hole as network-wide DNS + a domain list</h3>
+          <p>Point the router's DHCP DNS at Pi-hole and match the query log against ~40 known LLM API / agent domains. Zero extra hardware (a Raspberry Pi or a spare machine will do).</p>
+          <span class="catch">✓ Threat B · Shadow AI</span><span class="catch">✓ Local agents (system DNS)</span>
+          <pre><code class="blk"><span class="cmt"># Pull LLM / agent traffic from the Pi-hole query log (minimum viable)</span>
+<span class="kw">sqlite3</span> /etc/pihole/pihole-FTL.db \
+  <span class="str">"SELECT datetime(timestamp,'unixepoch','localtime') t,
+          client, domain
+   FROM queries
+   WHERE domain LIKE '%openai.com'
+      OR domain LIKE '%anthropic.com'
+      OR domain LIKE '%generativelanguage.googleapis%'
+      OR domain LIKE '%api.perplexity.ai'
+   ORDER BY timestamp DESC LIMIT 50;"</span></code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S1</div><div class="stage-time">One day</div></div>
+        <div class="stage-body">
+          <h3>Verify whether crawlers are genuine on exposed services</h3>
+          <p>Against the access logs of your internet-reachable reverse proxy / NAS, pull the vendors' official IP-range JSON for forward verification — if a UA claims to be GPTBot but the source IP isn't in <code class="inl">openai.com/gptbot.json</code>, it's an impostor.</p>
+          <span class="catch">✓ Threat A · Real vs. fake crawlers</span>
+          <pre><code class="blk"><span class="cmt"># Official IP-range JSON (fetch on a schedule, don't hardcode)</span>
+openai     → https://openai.com/gptbot.json
+anthropic  → https://claude.com/crawling/bots.json
+perplexity → https://www.perplexity.ai/perplexitybot.json
+
+<span class="cmt"># Ready-made open-source tools: daily-updated IP ranges + verification scripts</span>
+github.com/ramhee98/ai-crawler-ipranges
+github.com/ayronjins/ai-crawler-verify</code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S2</div><div class="stage-time">One weekend</div></div>
+        <div class="stage-body">
+          <h3>Mirror port + Zeek: catch scripted clients and callbacks</h3>
+          <p>If you have a managed switch, enable a SPAN port; if not, use a software router that supports mirroring, and feed the traffic to Zeek on a Raspberry Pi. Take JA4 from <code class="inl">ssl.log</code> and compute callback cadence from <code class="inl">conn.log</code>.</p>
+          <span class="catch">✓ The detectable part of threat C</span><span class="catch">✓ Script vs. browser</span>
+          <pre><code class="blk"><span class="cmt"># Start Zeek listening (Zeek 5.2+ supports QUIC natively)</span>
+<span class="kw">zeek</span> -i eth0 LogAscii::use_json=T
+
+<span class="cmt"># Find non-browser JA4 in ssl.log (compare against python/go/curl fingerprint libs)</span>
+<span class="kw">jq</span> -r <span class="str">'select(.ja4 != null) | [.ts,.server_name,.ja4] | @tsv'</span> ssl.log</code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S3</div><div class="stage-time">Incremental</div></div>
+        <div class="stage-body">
+          <h3>Three-way aggregation + scoring + alerting</h3>
+          <p>Aggregate the DNS / FLOW / TLS sources per device, apply the scoring rules below, and push an alert when the threshold is exceeded (Telegram / email). This is the step that makes it feel like a product.</p>
+          <span class="catch">✓ Sustainable operations</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">05</span><h2>Purple team test matrix: attack and detect yourself</h2></div>
+    <p class="sec-sub">On your own network, run the "attack" on the left by hand and confirm the matching vantage point actually lights up; then read "what can fool it" to know where the blind spots are. Run everything against your own devices.</p>
+    <div class="scrollx">
+      <table class="mx">
+        <thead>
+          <tr><th>ID</th><th>What you do as the attacker (self-test)</th><th>Vantage points it should hit</th><th>Expected signal</th><th>What can fool it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tid">T1</td>
+            <td class="atk">Shadow-exfiltration simulation<small>From a LAN machine, curl your own test data to api.openai.com</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span></td>
+            <td>DNS hits an LLM domain + a new connection to an OpenAI IP</td>
+            <td class="evade">That machine switches to DoH → DNS is blind, but FLOW still sees the IP</td>
+          </tr>
+          <tr>
+            <td class="tid">T2</td>
+            <td class="atk">Scripted scraping simulation<small>python httpx looping over your own internal wiki</small></td>
+            <td><span class="vpill tls">TLS</span><span class="vpill flow">FLOW</span></td>
+            <td>JA4 = python stack; full-site traversal with no dedup; even intervals</td>
+            <td class="evade">curl_cffi spoofing Chrome's JA4 → only the cadence stays suspicious</td>
+          </tr>
+          <tr>
+            <td class="tid">T3</td>
+            <td class="atk">Spoofed-crawler simulation<small>From your phone, curl -H "User-Agent: GPTBot" against your reverse proxy</small></td>
+            <td><span class="vpill host">LOG</span></td>
+            <td>IP verification fails: not within the gptbot.json ranges</td>
+            <td class="evade">Even if the attacker rents a nearby ASN, forward verification still fails</td>
+          </tr>
+          <tr>
+            <td class="tid">T4</td>
+            <td class="atk">DoH-bypass simulation<small>Point one machine's DNS at Cloudflare DoH</small></td>
+            <td><span class="vpill dns">DNS</span></td>
+            <td>A blind spot appears in Pi-hole; your 853/DoH interception should alert</td>
+            <td class="evade">If DoH isn't blocked → total silence, which is exactly the hole to verify</td>
+          </tr>
+          <tr>
+            <td class="tid">T5</td>
+            <td class="atk">Local-agent simulation<small>Run a browser-use / Claude agent doing a task on a LAN machine</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span><span class="vpill tls">TLS</span></td>
+            <td>A short burst connecting to many domains + LLM API calls</td>
+            <td class="evade">The agent egresses through a single proxy → the domain fan-out is collapsed</td>
+          </tr>
+          <tr>
+            <td class="tid">T6</td>
+            <td class="atk">Callback/C2 simulation<small>A small script that calls back every N seconds</small></td>
+            <td><span class="vpill flow">FLOW</span></td>
+            <td>Highly regular, evenly spaced connections in conn.log</td>
+            <td class="evade">Adding jitter / randomized intervals → the regularity is diluted</td>
+          </tr>
+          <tr>
+            <td class="tid">T7</td>
+            <td class="atk">IoT blind-spot simulation<small>A device that can't run an endpoint (camera/TV) initiates an outbound connection</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span></td>
+            <td>Only the network layer is available — validates the coverage gap of the HOST vantage point</td>
+            <td class="evade">The device hardcodes DoH → requires forced interception at the gateway</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">06</span><h2>Scoring rules: turn signals into a single number</h2></div>
+    <p class="sec-sub">Any single signal false-positives. Accumulate weights per device within a time window and only alert above the threshold, to keep the noise down.</p>
+    <div class="scoring">
+      <div class="sch"><div class="w">+40</div><div class="t">Non-browser JA4</div><div class="d">python/go/curl stack connecting out directly</div></div>
+      <div class="sch"><div class="w">+30</div><div class="t">LLM API domain</div><div class="d">initiated by a device that isn't a known AI client</div></div>
+      <div class="sch"><div class="w">+25</div><div class="t">Regular callbacks</div><div class="d">even intervals + low-jitter beaconing</div></div>
+      <div class="sch"><div class="w">+20</div><div class="t">Domain fan-out burst</div><div class="d">many unfamiliar domains in a short window</div></div>
+      <div class="sch"><div class="w">+20</div><div class="t">Spoofed crawler</div><div class="d">UA claims to be a bot, IP verification fails</div></div>
+      <div class="sch"><div class="w">+15</div><div class="t">DoH-bypass attempt</div><div class="d">connecting to a known DoH resolver</div></div>
+    </div>
+    <p style="margin-top:14px"><strong>Suggested thresholds</strong>: on a home network, ≥ 50 pushes a notification, ≥ 80 needs human review; on a corporate network, tune per device against its baseline. Run <strong>observation-only mode</strong> for two weeks first to build each device's normal profile, then turn on alerting — otherwise your first week will be buried by your own normal traffic.</p>
+  </section>
+
+  <!-- 07 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">07</span><h2>Three things that differ on a corporate network</h2></div>
+    <ul class="clean">
+      <li><strong>Vantage points are easier to get</strong>: with MDM you can roll out endpoints (HOST) across the fleet, and a managed switch gives you a ready SPAN port — an advantage the home network lacks.</li>
+      <li><strong>Baselines matter more</strong>: employees already use a pile of SaaS, so the LLM-domain hit rate is naturally high. The focus shifts from "is it happening at all" to "which device is abnormally busy, and which account is sending data out in bulk outside working hours."</li>
+      <li><strong>Compliance comes first</strong>: monitoring employee traffic touches privacy and labor law. Clear it with internal policy and informed consent before deployment — don't treat the technical design as a ready-to-ship solution.</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    <p><strong>Related document</strong>: this playbook covers the detection side of the product <em>Sieve · AI Source Governance</em>. The companion source-governance console is in the same directory, <code class="inl">sieve-console.html</code>.</p>
+    <p>References: official AI-crawler IP JSON (OpenAI / Anthropic / Perplexity) · JA4 TLS fingerprinting · Zeek 5.2+ · Pi-hole · RFC 9849 (ECH, 2026-03). This page is a self-test methodology; the commands are illustrative — adjust them for your environment.</p>
+  </div>
+
+</div>
+
+<script>
+document.getElementById("themeBtn").addEventListener("click",function(){
+  var r=document.documentElement, c=r.getAttribute("data-theme");
+  if(!c){ c=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"; }
+  r.setAttribute("data-theme", c==="dark"?"light":"dark");
+});
+</script>
