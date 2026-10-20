@@ -1,0 +1,64 @@
+{
+  "_comment": "复制为 config.json 后按需修改。密钥建议改用环境变量 SIEVE_TG_TOKEN / SIEVE_TG_CHAT，优先级高于本文件。IP 段来自厂商官方 JSON（运行时拉取 + 本地缓存），不要硬编码 IP。",
+
+  "log_path": "/var/log/nginx/access.log",
+
+  "cache_dir": ".cache",
+  "cache_ttl_hours": 24,
+  "fetch_timeout_seconds": 10,
+
+  "enable_rdns": false,
+
+  "spoof_alert_threshold": 1,
+  "alert_cooldown_minutes": 180,
+
+  "telegram": {
+    "token": "",
+    "chat_id": ""
+  },
+
+  "bots": [
+    {
+      "name": "GPTBot",
+      "vendor": "OpenAI",
+      "ua_tokens": ["GPTBot"],
+      "ip_json_urls": ["https://openai.com/gptbot.json"],
+      "rdns_suffixes": [".openai.com"]
+    },
+    {
+      "name": "OAI-SearchBot",
+      "vendor": "OpenAI",
+      "ua_tokens": ["OAI-SearchBot"],
+      "ip_json_urls": ["https://openai.com/searchbot.json"],
+      "rdns_suffixes": [".openai.com"]
+    },
+    {
+      "name": "ChatGPT-User",
+      "vendor": "OpenAI",
+      "ua_tokens": ["ChatGPT-User"],
+      "ip_json_urls": ["https://openai.com/chatgpt-user.json"],
+      "rdns_suffixes": [".openai.com"]
+    },
+    {
+      "name": "ClaudeBot",
+      "vendor": "Anthropic",
+      "ua_tokens": ["ClaudeBot", "Claude-Web", "anthropic-ai", "Claude-User", "Claude-SearchBot"],
+      "ip_json_urls": ["https://claude.com/crawling/bots.json"],
+      "rdns_suffixes": [".anthropic.com", ".claude.com"]
+    },
+    {
+      "name": "PerplexityBot",
+      "vendor": "Perplexity",
+      "ua_tokens": ["PerplexityBot"],
+      "ip_json_urls": ["https://www.perplexity.ai/perplexitybot.json"],
+      "rdns_suffixes": [".perplexity.ai"]
+    },
+    {
+      "name": "Perplexity-User",
+      "vendor": "Perplexity",
+      "ua_tokens": ["Perplexity-User"],
+      "ip_json_urls": ["https://www.perplexity.ai/perplexity-user.json"],
+      "rdns_suffixes": [".perplexity.ai"]
+    }
+  ]
+}
