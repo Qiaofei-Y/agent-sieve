@@ -37,6 +37,10 @@ collect             score                   merge          alert
                      sieve-verify re-tests with real data and feeds tuning back
 ```
 
+> **Two complementary lines**: S0 + S2 → S3 above is the **outbound line** — it catches internal agents / devices reaching out (DNS + outbound TLS, threat models B/C).
+> A parallel **inbound line**, [`sieve-s1/`](sieve-s1/), checks your public-facing services' access logs: it verifies whether requests that claim to be AI crawlers (UA containing GPTBot / ClaudeBot / PerplexityBot, etc.) really belong to the vendor (threat model A).
+> The two lines differ in data source and direction — complementary, and S1 does not feed into S3.
+
 ## ⚡ 60-second start (no infrastructure needed)
 
 ```bash
@@ -56,6 +60,7 @@ Pure Python standard library — **no `pip install`**.
 | Directory | What it is | Status |
 |---|---|---|
 | [`sieve-s0/`](sieve-s0/) | **S0** · Pi-hole DNS-layer detector | ✅ |
+| [`sieve-s1/`](sieve-s1/) | **S1** · crawler authenticity verification (inbound access logs × vendors' official IP ranges) | ✅ |
 | [`sieve-s2/`](sieve-s2/) | **S2** · Zeek + JA4 TLS-fingerprint detector | ✅ |
 | [`sieve-s3/`](sieve-s3/) | **S3** · merged verdict, unified alerting | ✅ |
 | [`sieve-verify/`](sieve-verify/) | Accuracy eval + tuning (runs the real S0/S2 code) | ✅ |
@@ -100,7 +105,7 @@ determined ones); DoH/ECH keep narrowing visibility, so block DoH at the firewal
 
 - [x] S0 DNS layer · S2 TLS layer · S3 merge · verification framework
 - [ ] Real-network validation, produce measured precision
-- [ ] S1 crawler authenticity verification (vendor IP JSON)
+- [x] S1 crawler authenticity verification (vendor IP JSON)
 - [ ] Cross-tenant domain-reputation / JA4-fingerprint DB (the moat)
 - [ ] Hosted version / web console
 
