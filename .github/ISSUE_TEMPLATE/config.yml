@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞 / Security vulnerability
+    url: https://github.com/Qiaofei-Y/agent-sieve/blob/main/SECURITY.md
+    about: 请勿通过公开 issue 报告安全漏洞，按 SECURITY.md 私下联系。 / Do not report vulnerabilities in public issues; follow SECURITY.md.
+  - name: 贡献指南 / Contributing guide
+    url: https://github.com/Qiaofei-Y/agent-sieve/blob/main/CONTRIBUTING.md
+    about: 提交 PR 或贡献域名/指纹前，请先读贡献指南。 / Read the contributing guide before opening a PR or sharing domains/fingerprints.
