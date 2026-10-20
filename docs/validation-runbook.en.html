@@ -1,0 +1,412 @@
+<title>Sieve Validation Runbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --plane:#eef1f0; --surface:#ffffff; --surface-2:#f7faf9; --surface-3:#eef2f1;
+  --ink:#0e1412; --ink-2:#4b5551; --ink-3:#838d89;
+  --rule:#e0e6e4; --rule-2:#cdd5d2;
+  --accent:#0d7268; --accent-deep:#084f48; --accent-wash:#e2efed; --on-accent:#fff;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-wash:#e7f6e7; --warning-wash:#fdf3dd; --critical-wash:#fae6e6;
+  --ink-good:#0a7a0a; --ink-amber:#8a5f02; --ink-crit:#b42020;
+  --shadow:0 1px 2px rgba(14,20,18,.05); --shadow-pop:0 6px 22px rgba(14,20,18,.14);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783; --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --critical-wash:#331616;
+  --ink-good:#4ec94e; --ink-amber:#f0c45a; --ink-crit:#f07a7a;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783; --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --critical-wash:#331616;
+  --ink-good:#4ec94e; --ink-amber:#f0c45a; --ink-crit:#f07a7a;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:14.5px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+.mono{ font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; }
+.tnum{ font-variant-numeric:tabular-nums; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+@media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+
+.wrap{ max-width:900px; margin:0 auto; padding-inline:20px; padding-block:0 72px; }
+
+/* masthead */
+.mast{ border-bottom:1px solid var(--rule); padding-block:28px 20px; margin-bottom:22px;
+  display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap; }
+.logo{ width:38px; height:38px; border-radius:10px; background:var(--accent); flex:none;
+  display:grid; place-items:center; box-shadow:var(--shadow); }
+.eyebrow{ font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-deep); }
+.mast h1{ font-size:26px; font-weight:700; letter-spacing:-.02em; margin:3px 0 6px; text-wrap:balance; }
+.mast .lede{ margin:0; color:var(--ink-2); font-size:14px; max-width:62ch; }
+.themebtn{ margin-left:auto; border:1px solid var(--rule-2); background:var(--surface); color:var(--ink-2);
+  font-family:inherit; font-size:12px; font-weight:500; height:30px; padding:0 11px; border-radius:7px;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.themebtn:hover{ border-color:var(--accent); color:var(--ink); }
+
+/* progress */
+.prog{ display:flex; align-items:center; gap:12px; margin-bottom:20px; font-size:12.5px; color:var(--ink-3); }
+.prog-track{ flex:1; height:7px; border-radius:4px; background:var(--surface-3); overflow:hidden; }
+.prog-fill{ height:100%; background:var(--accent); border-radius:4px; width:0%; transition:width .25s; }
+.prog b{ color:var(--ink); font-weight:600; }
+.reset{ border:1px solid var(--rule-2); background:none; color:var(--ink-3); font-family:inherit;
+  font-size:11.5px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.reset:hover{ color:var(--ink-crit); border-color:var(--ink-crit); }
+
+/* go/no-go */
+.gng{ background:var(--surface); border:1px solid var(--rule); border-radius:12px; box-shadow:var(--shadow);
+  padding:16px 18px; margin-bottom:26px; border-top:3px solid var(--accent); }
+.gng h2{ font-size:16px; margin:0 0 3px; font-weight:700; }
+.gng .sub{ font-size:12.5px; color:var(--ink-3); margin:0 0 14px; }
+.gng-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; align-items:end; }
+.field label{ display:block; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); margin-bottom:5px; }
+.field input{ width:100%; font-family:"IBM Plex Mono",monospace; font-size:16px; padding:7px 10px;
+  border:1px solid var(--rule-2); border-radius:7px; background:var(--surface-2); color:var(--ink);
+  font-variant-numeric:tabular-nums; }
+.field input:focus{ border-color:var(--accent); outline:none; }
+.metrics{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.metric{ flex:1; min-width:120px; background:var(--surface-2); border:1px solid var(--rule); border-radius:9px;
+  padding:11px 13px; }
+.metric .k{ font-size:11px; color:var(--ink-3); letter-spacing:.04em; }
+.metric .v{ font-size:26px; font-weight:700; letter-spacing:-.02em; margin-top:2px;
+  font-variant-numeric:tabular-nums; }
+.verdict{ margin-top:16px; padding:12px 15px; border-radius:9px; font-size:13.5px; font-weight:500;
+  display:flex; gap:10px; align-items:flex-start; }
+.verdict svg{ flex:none; margin-top:2px; }
+.verdict.go{ background:var(--good-wash); color:var(--ink-good); }
+.verdict.hold{ background:var(--warning-wash); color:var(--ink-amber); }
+.verdict.stop{ background:var(--critical-wash); color:var(--ink-crit); }
+.verdict.idle{ background:var(--surface-3); color:var(--ink-3); }
+.verdict b{ font-weight:700; }
+.target-note{ font-size:11.5px; color:var(--ink-3); margin-top:11px; }
+.target-note input{ width:52px; font-family:"IBM Plex Mono",monospace; padding:2px 5px;
+  border:1px solid var(--rule-2); border-radius:5px; background:var(--surface-2); color:var(--ink);
+  font-variant-numeric:tabular-nums; text-align:right; }
+
+/* phases */
+.phase{ margin-bottom:14px; border:1px solid var(--rule); border-radius:12px; background:var(--surface);
+  box-shadow:var(--shadow); overflow:hidden; }
+.phase > summary{ list-style:none; cursor:pointer; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.phase > summary::-webkit-details-marker{ display:none; }
+.ph-no{ font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--accent-deep);
+  background:var(--accent-wash); border-radius:6px; padding:3px 8px; flex:none; }
+.ph-title{ font-size:15px; font-weight:600; }
+.ph-when{ font-size:11.5px; color:var(--ink-3); margin-left:2px; }
+.ph-count{ margin-left:auto; font-size:11.5px; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.chev{ transition:transform .15s; color:var(--ink-3); flex:none; }
+.phase[open] .chev{ transform:rotate(90deg); }
+.ph-body{ padding:2px 16px 16px; border-top:1px solid var(--rule); }
+.ph-body > p{ color:var(--ink-2); font-size:13.5px; margin:12px 0; }
+
+/* check items */
+.item{ display:flex; gap:11px; padding:9px 0; border-top:1px solid var(--rule); align-items:flex-start; }
+.item:first-of-type{ border-top:0; }
+.item input[type=checkbox]{ appearance:none; -webkit-appearance:none; width:19px; height:19px; flex:none;
+  border:1.5px solid var(--rule-2); border-radius:5px; background:var(--surface-2); cursor:pointer;
+  margin-top:1px; position:relative; transition:all .12s; }
+.item input[type=checkbox]:checked{ background:var(--accent); border-color:var(--accent); }
+.item input[type=checkbox]:checked::after{ content:""; position:absolute; left:6px; top:2px; width:5px; height:10px;
+  border:solid var(--on-accent); border-width:0 2px 2px 0; transform:rotate(45deg); }
+.item label{ cursor:pointer; font-size:13.5px; flex:1; }
+.item label .d{ display:block; color:var(--ink-3); font-size:12px; margin-top:2px; }
+.item input:checked + label{ color:var(--ink-3); }
+.item input:checked + label .main{ text-decoration:line-through; text-decoration-color:var(--rule-2); }
+
+pre{ background:var(--surface-3); border:1px solid var(--rule); border-radius:8px; padding:10px 13px;
+  overflow-x:auto; margin:8px 0 2px; }
+code.blk{ font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.7; color:var(--ink); white-space:pre; }
+.cmt{ color:var(--ink-3); }
+code.inl{ font-family:"IBM Plex Mono",monospace; font-size:.88em; background:var(--surface-3);
+  padding:1px 5px; border-radius:4px; }
+
+/* attack table */
+.scrollx{ overflow-x:auto; border:1px solid var(--rule); border-radius:9px; margin:6px 0; }
+table.at{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:620px; }
+.at th{ font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3);
+  text-align:left; padding:9px 11px; background:var(--surface-2); border-bottom:1px solid var(--rule-2); white-space:nowrap; }
+.at td{ padding:9px 11px; border-bottom:1px solid var(--rule); vertical-align:top; }
+.at tbody tr:last-child td{ border-bottom:0; }
+.at .tid{ font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--accent-deep); white-space:nowrap; }
+.at .exp{ color:var(--ink-good); font-weight:500; font-size:11.5px; }
+.at .cmd{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-2); }
+.res{ display:inline-flex; gap:4px; }
+.res button{ border:1px solid var(--rule-2); background:var(--surface); color:var(--ink-3); font-family:inherit;
+  font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; cursor:pointer; }
+.res button.on-hit{ background:var(--good-wash); color:var(--ink-good); border-color:var(--good); }
+.res button.on-miss{ background:var(--critical-wash); color:var(--ink-crit); border-color:var(--critical); }
+
+.tip{ background:var(--accent-wash); border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  border-radius:8px; padding:10px 13px; font-size:12.5px; color:var(--ink-2); margin:10px 0 2px; }
+.tip b{ color:var(--accent-deep); }
+.save-note{ text-align:center; font-size:11.5px; color:var(--ink-3); margin-top:20px; }
+
+@media (max-width:620px){
+  .gng-grid{ grid-template-columns:repeat(2,1fr); }
+  .ph-when{ display:none; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <div style="min-width:0;flex:1">
+      <div class="eyebrow">Sieve · Validation Phase</div>
+      <h1>Real-Network Validation Runbook</h1>
+      <p class="lede">Bring S0/S2/S3 onto your own network, run the T1–T7 self-test, and measure the <strong>real false-positive and false-negative rates</strong> — that number decides whether this thing can become a business. Just check the boxes; progress is saved automatically on this machine.</p>
+    </div>
+    <a class="themebtn" href="validation-runbook.html">中文</a>
+    <button class="themebtn" id="themeBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>Theme</button>
+  </header>
+
+  <div class="prog">
+    <span>Progress <b id="progPct">0%</b></span>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    <span id="progCount" class="tnum">0 / 0</span>
+    <button class="reset" id="resetBtn">Clear</button>
+  </div>
+
+  <!-- GO / NO-GO -->
+  <section class="gng">
+    <h2>Decision Metrics · Go / No-Go</h2>
+    <p class="sub">The entire validation serves this one box. After running evaluate.py, enter the four numbers from the S3 merge layer here — this is the conclusion of the whole exercise.</p>
+    <div class="gng-grid">
+      <div class="field"><label>TP True Positive</label><input id="tp" type="number" min="0" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>FP False Positive</label><input id="fp" type="number" min="0" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>FN False Negative</label><input id="fn" type="number" min="0" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>TN True Negative</label><input id="tn" type="number" min="0" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="k">Precision</div><div class="v" id="mPrec">—</div></div>
+      <div class="metric"><div class="k">Recall</div><div class="v" id="mRec">—</div></div>
+      <div class="metric"><div class="k">F1</div><div class="v" id="mF1">—</div></div>
+    </div>
+    <div class="verdict idle" id="verdict">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/></svg>
+      <span id="verdictText">Enter all four numbers to get a verdict.</span>
+    </div>
+    <p class="target-note">Target line (editable): precision ≥ <input id="tPrec" type="number" min="0" max="100" value="90">% , recall ≥ <input id="tRec" type="number" min="0" max="100" value="80">% . Precision comes first — high false positives drive users away instantly.</p>
+  </section>
+
+  <!-- PHASE 0 -->
+  <details class="phase" open>
+    <summary><span class="ph-no">P0</span><span><span class="ph-title">Setup</span> <span class="ph-when">~half a day</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <p>Stand up both collection layers. Confirm each machine is running before moving on.</p>
+      <div class="item"><input type="checkbox" id="c0_1"><label for="c0_1"><span class="main">Confirm scope and authorization</span><span class="d">Only on networks you own or are authorized to test. A corporate network must clear privacy/compliance first.</span></label></div>
+      <div class="item"><input type="checkbox" id="c0_2"><label for="c0_2"><span class="main">Point router DHCP DNS to Pi-hole</span><span class="d">So queries from every device on the network pass through Pi-hole.</span></label></div>
+      <div class="item"><input type="checkbox" id="c0_3"><label for="c0_3"><span class="main">S0 configured and seeing queries</span><span class="d"><code class="inl">cp config.example.json config.json</code>, fill in <code class="inl">known_ai_clients</code>, and run once to confirm there is data.</span></label></div>
+      <div class="item"><input type="checkbox" id="c0_4"><label for="c0_4"><span class="main">Set up traffic mirroring (SPAN / TAP / soft router)</span><span class="d">Feed uplink traffic to the machine running Zeek.</span></label></div>
+      <div class="item"><input type="checkbox" id="c0_5"><label for="c0_5"><span class="main">Install Zeek + JA4 package, start capture</span></label></div>
+      <pre><code class="blk">sudo zkg install zeek/ja4
+sudo zeek -i eth0 -C sieve-s2/zeek/sieve-ja4.zeek
+<span class="cmt"># Confirm ssl.log has the ja4 field and conn.log has orig_bytes</span></code></pre>
+      <div class="item"><input type="checkbox" id="c0_6"><label for="c0_6"><span class="main">S2 reading the logs</span><span class="d"><code class="inl">python3 sieve-s2/sieve_s2.py --observe --logs /opt/zeek/logs/current</code></span></label></div>
+      <div class="item"><input type="checkbox" id="c0_7"><label for="c0_7"><span class="main">known_ai_clients matches across both layers</span><span class="d">Add the dev machines where you routinely use an LLM, so they are exempted consistently.</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 1 -->
+  <details class="phase">
+    <summary><span class="ph-no">P1</span><span><span class="ph-title">Build the baseline</span> <span class="ph-when">~2 weeks</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <p>Observe only, do not alert — let the system learn what "normal" looks like on your network. Do not skip this step: skip it and the whole network reads as false positives during validation.</p>
+      <div class="item"><input type="checkbox" id="c1_1"><label for="c1_1"><span class="main">Run S0 + S2 on a schedule with <code class="inl">--observe</code></span><span class="d">cron / systemd timer, once an hour, with the interval aligned to the window.</span></label></div>
+      <div class="item"><input type="checkbox" id="c1_2"><label for="c1_2"><span class="main">Populate the JA4 annotation table</span><span class="d">Add recurring, device-verified browser/script JA4 fingerprints to <code class="inl">sieve-s2/ja4_fingerprints.txt</code> to cut misclassification.</span></label></div>
+      <div class="item"><input type="checkbox" id="c1_3"><label for="c1_3"><span class="main">Record devices with legitimate LLM use</span><span class="d">During the observation period, note who uses LLMs normally (a human in a browser) and add them to known_ai_clients.</span></label></div>
+      <div class="item"><input type="checkbox" id="c1_4"><label for="c1_4"><span class="main">Confirm DoH is blocked</span><span class="d">Firewall port 853 and block the DoH resolvers in domains.txt, or the DNS layer can be bypassed at any time.</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 2 -->
+  <details class="phase">
+    <summary><span class="ph-no">P2</span><span><span class="ph-title">Run the T1–T7 self-test</span> <span class="ph-when">~1 day</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <p>From one LAN machine, send labeled test traffic and record the time window of each run. After each test, click on the right to record whether <strong>S3 caught it</strong>.</p>
+      <div class="scrollx">
+      <table class="at">
+        <thead><tr><th>Test</th><th>Command / method</th><th>Expected S3 verdict</th><th>Your result</th></tr></thead>
+        <tbody>
+          <tr><td class="tid">T1 Shadow exfiltration</td><td class="cmd">run_attacks.py --test t1 --yes</td><td class="exp">Alert · high (script + LLM)</td><td><span class="res" data-test="t1"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T2 Script scraping</td><td class="cmd">--test t2 --target https://your-site/</td><td class="exp">Alert (script + fan-out)</td><td><span class="res" data-test="t2"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T3 Spoofed crawler</td><td class="cmd">curl from a phone -H "UA: GPTBot" against your reverse proxy</td><td class="exp">S1 domain (IP verification) · optional for this kit</td><td><span class="res" data-test="t3"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T4 DoH bypass</td><td class="cmd">run_attacks.py --test t4 --yes</td><td class="exp">Alert (script + DoH)</td><td><span class="res" data-test="t4"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T5 Local agent</td><td class="cmd">Run a real browser-use / agent on a LAN machine</td><td class="exp">Alert · high (script + LLM + fan-out)</td><td><span class="res" data-test="t5"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T6 C2 callback</td><td class="cmd">--test t6 --target your-host</td><td class="exp">Alert (script + callback)</td><td><span class="res" data-test="t6"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">T7 IoT blind spot</td><td class="cmd">Send an outbound connection from a device that cannot run the endpoint</td><td class="exp">Visible only via DNS/FLOW · validates the coverage gap</td><td><span class="res" data-test="t7"><button data-v="hit">Hit</button><button data-v="miss">Miss</button></span></td></tr>
+          <tr><td class="tid">B1 Benign control</td><td class="cmd">run_attacks.py --test b1 --yes</td><td class="exp">Normal (should NOT alert!)</td><td><span class="res" data-test="b1"><button data-v="hit">False alarm</button><button data-v="miss">Passed✓</button></span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="tip"><b>Key control:</b> beyond B1, be sure to have one device where <strong>a real person uses ChatGPT once in a browser</strong> — it should <strong>not</strong> be alerted. This is the boundary this product most easily gets wrong, and also the most valuable one.</div>
+      <div class="item"><input type="checkbox" id="c2_1"><label for="c2_1"><span class="main">Time window recorded for every test (attack_manifest.jsonl)</span></label></div>
+      <div class="item"><input type="checkbox" id="c2_2"><label for="c2_2"><span class="main">Added the "real person uses ChatGPT in a browser" control</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 3 -->
+  <details class="phase">
+    <summary><span class="ph-no">P3</span><span><span class="ph-title">Collect and label</span> <span class="ph-when">~1 hour</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <div class="item"><input type="checkbox" id="c3_1"><label for="c3_1"><span class="main">Turn the manifest into labels.json</span><span class="d">Each device that took part in testing → <code class="inl">{truth, scenario}</code>; the benign control devices must be listed too.</span></label></div>
+      <pre><code class="blk">{
+  "10.0.0.23": {"truth":"malicious","scenario":"T1 shadow exfiltration"},
+  "10.0.0.11": {"truth":"benign","scenario":"real person using ChatGPT"}
+}</code></pre>
+      <div class="item"><input type="checkbox" id="c3_2"><label for="c3_2"><span class="main">Confirm the coverage window</span><span class="d">All tests fall within the same look-back window (covered by <code class="inl">--window</code>).</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 4 -->
+  <details class="phase">
+    <summary><span class="ph-no">P4</span><span><span class="ph-title">Evaluate</span> <span class="ph-when">~10 minutes</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <div class="item"><input type="checkbox" id="c4_1"><label for="c4_1"><span class="main">Run evaluate.py on the real data</span></label></div>
+      <pre><code class="blk">python3 sieve-verify/evaluate.py --from-live \
+  --pihole-db /etc/pihole/pihole-FTL.db \
+  --zeek-logs /opt/zeek/logs/current \
+  --labels labels.json --window 60</code></pre>
+      <div class="item"><input type="checkbox" id="c4_2"><label for="c4_2"><span class="main">Enter the S3 merge layer's TP/FP/FN/TN into the decision box at the top</span><span class="d">Use the merged result as the source of truth — that is the alert the user actually receives.</span></label></div>
+      <div class="item"><input type="checkbox" id="c4_3"><label for="c4_3"><span class="main">Trace each false positive to its cause</span><span class="d">Which signal pushed each FP over the line? Write it down — that is what you tune next.</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 5 -->
+  <details class="phase">
+    <summary><span class="ph-no">P5</span><span><span class="ph-title">Tune and re-test</span> <span class="ph-when">as needed</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <p>If you fall short, tune one thing per the attribution and re-run once — don't change a pile at once, or you won't know which change did what.</p>
+      <div class="item"><input type="checkbox" id="c5_1"><label for="c5_1"><span class="main">High false positives → first extend known_ai_clients / the JA4 annotation table</span><span class="d">Most false positives come from "a person using an LLM" and "a browser mistaken for a script".</span></label></div>
+      <div class="item"><input type="checkbox" id="c5_2"><label for="c5_2"><span class="main">Still high → adjust weights / union_threshold in config.json</span></label></div>
+      <div class="item"><input type="checkbox" id="c5_3"><label for="c5_3"><span class="main">False negatives → find which layer missed coverage</span><span class="d">Usually no TLS record or traffic went over DoH; add collection to cover it rather than just lowering the threshold.</span></label></div>
+      <div class="item"><input type="checkbox" id="c5_4"><label for="c5_4"><span class="main">After each single change, re-run evaluate.py and update the decision box</span></label></div>
+    </div>
+  </details>
+
+  <!-- PHASE 6 -->
+  <details class="phase">
+    <summary><span class="ph-no">P6</span><span><span class="ph-title">Draw the conclusion</span></span><span class="ph-count" data-count></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="ph-body">
+      <div class="item"><input type="checkbox" id="c6_1"><label for="c6_1"><span class="main">The verdict at the top reads GO</span><span class="d">Both precision and recall meet the target.</span></label></div>
+      <div class="item"><input type="checkbox" id="c6_2"><label for="c6_2"><span class="main">Record the parameter set that hit the target</span><span class="d">weights / thresholds / known_ai_clients — this is your "tuned default configuration".</span></label></div>
+      <div class="item"><input type="checkbox" id="c6_3"><label for="c6_3"><span class="main">Decide the next step</span><span class="d">GO → open-source to drive installs / build a hosted version; below target → take the attribution back to fix the detection logic, not fudge the threshold.</span></label></div>
+      <div class="tip"><b>The criterion:</b> precision is the line between life and death. Only when you can reliably keep false positives low (high precision) will anyone use it; recall can be filled in gradually later. Raising recall at the cost of raising false positives too is a step backward.</div>
+    </div>
+  </details>
+
+  <p class="save-note">Progress and numbers are saved locally in this browser. Switching devices or clearing the cache loses them.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "sieve-verify-runbook-v1";
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ store = {}; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.item input[type=checkbox]'));
+
+  function updateProgress(){
+    var done = boxes.filter(function(b){ return b.checked; }).length;
+    var pct = boxes.length ? Math.round(done / boxes.length * 100) : 0;
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progPct').textContent = pct + '%';
+    document.getElementById('progCount').textContent = done + ' / ' + boxes.length;
+    document.querySelectorAll('.phase').forEach(function(ph){
+      var local = Array.prototype.slice.call(ph.querySelectorAll('.item input[type=checkbox]'));
+      var el = ph.querySelector('[data-count]');
+      if(!el) return;
+      if(!local.length){ el.textContent = ''; return; }
+      var d = local.filter(function(b){ return b.checked; }).length;
+      el.textContent = d + '/' + local.length;
+    });
+  }
+
+  boxes.forEach(function(b){
+    if(store[b.id]) b.checked = true;
+    b.addEventListener('change', function(){ store[b.id] = b.checked; save(); updateProgress(); });
+  });
+
+  // attack result toggles
+  document.querySelectorAll('.res').forEach(function(grp){
+    var t = grp.getAttribute('data-test');
+    var cur = store['res_' + t];
+    grp.querySelectorAll('button').forEach(function(btn){
+      var v = btn.getAttribute('data-v');
+      if(cur === v) btn.classList.add(v === 'hit' ? 'on-hit' : 'on-miss');
+      btn.addEventListener('click', function(){
+        var now = store['res_' + t] === v ? null : v;
+        store['res_' + t] = now; save();
+        grp.querySelectorAll('button').forEach(function(x){ x.classList.remove('on-hit','on-miss'); });
+        if(now) btn.classList.add(now === 'hit' ? 'on-hit' : 'on-miss');
+      });
+    });
+  });
+
+  // go/no-go calculator
+  var ids = ['tp','fp','fn','tn','tPrec','tRec'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if(store[id] != null && store[id] !== '') el.value = store[id];
+    el.addEventListener('input', function(){ store[id] = el.value; save(); calc(); });
+  });
+  function num(id){ var v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : Math.max(0, v); }
+  function calc(){
+    var tp = num('tp'), fp = num('fp'), fn = num('fn');
+    var hasData = (tp + fp + fn + num('tn')) > 0;
+    var prec = (tp + fp) ? tp / (tp + fp) : 0;
+    var rec  = (tp + fn) ? tp / (tp + fn) : 0;
+    var f1 = (prec + rec) ? 2 * prec * rec / (prec + rec) : 0;
+    document.getElementById('mPrec').textContent = hasData && (tp+fp) ? Math.round(prec*100) + '%' : '—';
+    document.getElementById('mRec').textContent  = hasData && (tp+fn) ? Math.round(rec*100) + '%' : '—';
+    document.getElementById('mF1').textContent   = hasData ? f1.toFixed(2) : '—';
+    var v = document.getElementById('verdict'), txt = document.getElementById('verdictText');
+    v.className = 'verdict idle';
+    if(!hasData || !(tp+fp) || !(tp+fn)){ txt.textContent = 'Enter all four numbers to get a verdict.'; return; }
+    var tP = num('tPrec')/100, tR = num('tRec')/100;
+    if(prec >= tP && rec >= tR){
+      v.className = 'verdict go';
+      txt.innerHTML = '<b>GO</b> — both precision and recall meet the target. Record the current parameter set and move to the next step (open-source / hosted version).';
+    } else if(prec >= tP && rec < tR){
+      v.className = 'verdict hold';
+      txt.innerHTML = '<b>Shippable, keep improving recall</b> — false positives are under control (precision met), recall is still short. Add collection coverage rather than forcing it by lowering the threshold.';
+    } else {
+      v.className = 'verdict stop';
+      txt.innerHTML = '<b>Cut false positives first</b> — precision is below target, and false positives drive users away instantly. Fix them one by one using evaluate.py\'s false-positive attribution before talking about recall.';
+    }
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    if(!confirm('Clear all checkboxes and entries?')) return;
+    store = {}; save();
+    boxes.forEach(function(b){ b.checked = false; });
+    document.querySelectorAll('.res button').forEach(function(x){ x.classList.remove('on-hit','on-miss'); });
+    ids.forEach(function(id){ document.getElementById(id).value = id==='tPrec'?'90':(id==='tRec'?'80':''); });
+    updateProgress(); calc();
+  });
+
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    var r = document.documentElement, c = r.getAttribute('data-theme');
+    if(!c){ c = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; }
+    r.setAttribute('data-theme', c === 'dark' ? 'light' : 'dark');
+  });
+
+  updateProgress(); calc();
+})();
+</script>
