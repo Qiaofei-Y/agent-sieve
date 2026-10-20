@@ -1,5 +1,7 @@
 # Sieve S3 — 合并层：S0(DNS) + S2(TLS) 统一研判
 
+**简体中文** · [English](README.en.md)
+
 > 把 DNS 侧（S0）和 TLS 侧（S2）两路信号按设备合并，套用 `../sieve-verify/` 跑出来的
 > 研判规则做统一告警。**直接 import 真实的 S0/S2 打分代码**——单一事实源，合并层只做研判，不重算。
 

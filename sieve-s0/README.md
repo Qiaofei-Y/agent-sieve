@@ -1,5 +1,7 @@
 # Sieve S0 — 家庭网 AI / Agent 流量最小检测器
 
+**简体中文** · [English](README.en.md)
+
 > Stage 0 原型。从 Pi-hole 的 DNS 查询日志里按设备找出 **LLM API / agent 基础设施 / DoH 绕过** 的痕迹，打分，超阈值推 Telegram 告警。
 >
 > **纯 Python 标准库，无需 `pip install`，树莓派开箱即跑。**

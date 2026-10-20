@@ -1,5 +1,7 @@
 # Sieve S2 — TLS 指纹层检测器（Zeek + JA4）
 
+**简体中文** · [English](README.en.md)
+
 > Stage 2 原型。在 S0（纯 DNS）之上补三件它看不到的事：
 > **① 用 JA4 指纹判断客户端是不是脚本**（python/curl/go ≠ 真浏览器）；
 > **② 从真实连接看回连节奏 beaconing**；**③ 看外发体量**。
