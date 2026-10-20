@@ -328,9 +328,29 @@ a{ color: var(--accent); }
 .score-fill{ height:100%; border-radius:3px; }
 .score-n{ width:22px; text-align:right; font-weight:600; font-size:12px; }
 
+/* reputation panel */
+.repgrid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.repstat{ background:var(--surface-2); border:1px solid var(--rule); border-radius:9px; padding:11px 13px; }
+.repstat .k{ font-size:11px; color:var(--ink-3); letter-spacing:.04em; }
+.repstat .v{ font-size:24px; font-weight:600; letter-spacing:-.02em; margin-top:2px; }
+.repstat .s{ font-size:11px; color:var(--ink-3); margin-top:1px; }
+.repstat .s b{ color:var(--accent-deep); font-weight:600; }
+.netbars{ display:flex; align-items:flex-end; gap:5px; height:58px; margin:8px 0 6px; }
+.netbars > div{ flex:1; background:var(--accent); border-radius:3px 3px 0 0; min-height:4px; }
+.netlab{ display:flex; gap:5px; }
+.netlab > div{ flex:1; text-align:center; font-size:10px; color:var(--ink-3); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.rchip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-2);
+  background:var(--surface-3); border:1px solid var(--rule); border-radius:20px; padding:3px 10px; }
+.rchip svg{ color:var(--accent); flex:none; }
+.vbad{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--critical); }
+.kindtag{ display:inline-block; font-size:10px; font-weight:600; padding:0 5px; border-radius:4px;
+  background:var(--surface-3); color:var(--ink-3); margin-left:5px; vertical-align:middle; }
+
 @media (max-width: 1080px){
   .kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .row-2{ grid-template-columns:minmax(0,1fr); }
+  .repgrid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 820px){
   :root{ --rail:0px; }
@@ -403,6 +423,10 @@ a{ color: var(--accent); }
     <button class="nav-item">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 7H7a5 5 0 0 0 0 10h3M14 7h3a5 5 0 0 1 0 10h-3M8 12h8"/></svg>
       网关与集成
+    </button>
+    <button class="nav-item">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+      信誉库
     </button>
 
     <div class="rail-foot">
@@ -615,6 +639,67 @@ a{ color: var(--accent); }
           </div>
         </div>
 
+      </section>
+
+      <!-- reputation -->
+      <section class="card">
+        <div class="card-head">
+          <h2>跨租户信誉库</h2>
+          <span class="hint">护城河 · 匿名聚合，越多装机点越准</span>
+          <span class="spacer"></span>
+          <span class="rchip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+            本月已同步
+          </span>
+        </div>
+        <div class="card-body">
+
+          <div class="repgrid" aria-label="信誉库指标">
+            <div class="repstat"><div class="k">收录指标</div><div class="v tnum">1,284</div><div class="s">域名 + JA4 指纹</div></div>
+            <div class="repstat"><div class="k">已确认高危</div><div class="v tnum" style="color:var(--critical)">317</div><div class="s">≥3 租户独立确认</div></div>
+            <div class="repstat"><div class="k">贡献租户</div><div class="v tnum">428</div><div class="s"><b>+37</b> 本月新增</div></div>
+            <div class="repstat"><div class="k">本月你的贡献</div><div class="v tnum">23</div><div class="s">仅公共可疑指标</div></div>
+          </div>
+
+          <div class="row-2" style="margin-top:14px">
+
+            <div class="card" style="box-shadow:none">
+              <div class="card-head"><h2>已确认高危指标 Top 6</h2><span class="hint">按跨租户确认数排序</span></div>
+              <div class="card-body scrollx" style="padding-top:10px">
+                <table class="mini">
+                  <thead><tr><th>指标</th><th>类别</th><th>判定</th><th>跨租户确认</th></tr></thead>
+                  <tbody>
+                    <tr><td class="mono">ai-tools-hub.net</td><td style="color:var(--ink-2)">内容农场</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:100%;background:var(--accent)"></div></div><span class="score-n tnum">312</span></div></td></tr>
+                    <tr><td class="mono">t13d0908h1<span class="kindtag">JA4</span></td><td style="color:var(--ink-2)">脚本指纹</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:92%;background:var(--accent)"></div></div><span class="score-n tnum">287</span></div></td></tr>
+                    <tr><td class="mono">devguide-pro.io</td><td style="color:var(--ink-2)">SEO 聚合</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:63%;background:var(--accent)"></div></div><span class="score-n tnum">198</span></div></td></tr>
+                    <tr><td class="mono">cdn.jsdelivr-mirror.cc</td><td style="color:var(--ink-2)">未知镜像</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:50%;background:var(--accent)"></div></div><span class="score-n tnum">156</span></div></td></tr>
+                    <tr><td class="mono">answers.quickfix.dev</td><td style="color:var(--ink-2)">低质 UGC</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:45%;background:var(--accent)"></div></div><span class="score-n tnum">141</span></div></td></tr>
+                    <tr><td class="mono">t13i1107h2<span class="kindtag">JA4</span></td><td style="color:var(--ink-2)">扫描器指纹</td><td><span class="vbad">▲ bad</span></td><td><div class="score"><div class="score-track"><div class="score-fill" style="width:31%;background:var(--accent)"></div></div><span class="score-n tnum">98</span></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card" style="box-shadow:none">
+              <div class="card-head"><h2>网络效应</h2><span class="hint">贡献租户数（近 6 月）</span></div>
+              <div class="card-body" style="padding-top:10px">
+                <div class="netbars" role="img" aria-label="贡献租户数从 61 增长到 428">
+                  <div style="height:14%"></div><div style="height:27%"></div><div style="height:45%"></div>
+                  <div style="height:66%"></div><div style="height:83%"></div><div style="height:100%"></div>
+                </div>
+                <div class="netlab"><div>5月</div><div>6月</div><div>7月</div><div>8月</div><div>9月</div><div>10月</div></div>
+                <p class="band-note" style="margin-top:12px">本月告警里 <b style="color:var(--accent-deep)">41%</b> 由跨租户信誉<strong>提前</strong>识别——本地还没见过的坏指标，别人已标过。装机点越多，这个比例越高。</p>
+                <div class="chips" style="margin-top:12px">
+                  <span class="rchip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>只收录公共指标</span>
+                  <span class="rchip">不含内网 / IP / 设备</span>
+                  <span class="rchip">跨租户去重计票</span>
+                  <span class="rchip">sha256 完整性校验</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </section>
 
     </main>
