@@ -71,6 +71,9 @@ def load_config(path):
         "alert_cooldown_minutes": 180,
         "union_threshold": 55,
         "s2_automated_min": 40,
+        "reputation_feed": "",
+        "confirm_min_tenants": 3,
+        "reputation_points": 30,
         "known_ai_clients": [],
     }
     if path and os.path.exists(path):
@@ -127,12 +130,34 @@ def decide(client, r0, r2, cfg):
             seen_fam.add(fam)
             merged.append((src, lbl, pts, detail))
 
+    # ── 跨租户信誉（可选）──
+    # 仅当配置了信誉源时附加；无 feed 时整段跳过，判定与之前逐字节一致（selftest 不受影响）。
+    # 纯附加：只会增加 rep 信号族与分数，不会抑制任何原有判定，因此不会制造新漏报。
+    feed = cfg.get("_feed")
+    repmod = cfg.get("_rep_mod")
+    rep_hits = []
+    if feed and repmod and feed.get("entries") and not known:
+        domains = []
+        if r0 and r0.get("hit_domains"):
+            for lst in r0["hit_domains"].values():
+                domains.extend(lst)
+        ja4s = r2.get("ja4_list", []) if r2 else []
+        rep_hits = repmod.reputation_signal(feed, domains, ja4s,
+                                            cfg.get("confirm_min_tenants", 3))
+        if rep_hits:
+            pts = cfg.get("reputation_points", 30)
+            fams.add("rep")
+            combined += pts
+            ind = rep_hits[0][2]
+            merged.append(("REP", "跨租户信誉命中", pts,
+                           "%s · %d 租户确认(%s)" % (ind["indicator"], ind["tenants"], ind["category"])))
+
     # ── 研判规则（来自 sieve-verify）──
     if known:
         level = "免分"
     elif not fams and combined == 0:
         level = "正常"
-    elif fams == {"llm"} and not s2_automated:
+    elif fams - {"rep"} == {"llm"} and not s2_automated:
         # 唯一证据是连了 AI 域名、且 TLS 看是浏览器 → 多半是人在用
         level = "观察" if combined >= cfg["union_threshold"] else "正常"
     elif s2_automated and combined >= cfg["s2_automated_min"]:
@@ -145,7 +170,8 @@ def decide(client, r0, r2, cfg):
         level = "正常"
 
     if level == "告警":
-        conf = "高" if seen_both else "中"
+        # 两层命中、或跨租户信誉确认，都算高置信
+        conf = "高" if (seen_both or rep_hits) else "中"
     elif level == "观察":
         conf = "低"
     else:
@@ -156,6 +182,8 @@ def decide(client, r0, r2, cfg):
         layers.append("DNS")
     if fam2:
         layers.append("TLS")
+    if rep_hits:
+        layers.append("REP")
 
     return {"client": client, "level": level, "conf": conf, "combined": combined,
             "s0": s0_score, "s2": s2_score, "layers": layers, "known": known,
@@ -304,6 +332,19 @@ def main():
     cfg2 = s2.load_config(None); cfg2["known_ai_clients"] = cfg["known_ai_clients"]
     dmap = s0.load_domains(cfg["domains_file"])
     fps = s2.load_fingerprints(cfg["fingerprints_file"])
+
+    # 可选：加载跨租户信誉源（demo 下回退到示例源以演示效果）
+    feed_path = cfg.get("reputation_feed") or ""
+    if not feed_path and args.demo:
+        example = os.path.join(HERE, "..", "sieve-rep", "feed.example.json")
+        if os.path.exists(example):
+            feed_path = example
+    if feed_path and not os.path.isabs(feed_path):
+        feed_path = os.path.normpath(os.path.join(HERE, "..", feed_path))
+    if feed_path and os.path.exists(feed_path):
+        repmod = load_module("reputation", os.path.join(HERE, "..", "sieve-rep", "reputation.py"))
+        cfg["_rep_mod"] = repmod
+        cfg["_feed"] = repmod.load_feed(feed_path)
 
     r0 = s0.score_clients(s0_rows, cfg0, dmap, baseline={})
     r2 = s2.score(ssl_rows, conn_rows, cfg2, dmap, fps)

@@ -1,0 +1,9 @@
+{
+  "_comment": "复制为 config.json。信誉库消费端参数——被 sieve-s3 读取以启用跨租户信誉信号。",
+
+  "reputation_feed": "sieve-rep/feed.json",
+  "confirm_min_tenants": 3,
+  "reputation_points": 30,
+
+  "_note_contribute": "贡献与聚合是独立 CLI（contribute.py / aggregate.py），不在此配置。tenant_id 自动生成于 .tenant_id，不入库。"
+}

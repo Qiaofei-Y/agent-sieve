@@ -63,6 +63,7 @@ Pure Python standard library — **no `pip install`**.
 | [`sieve-s1/`](sieve-s1/) | **S1** · crawler authenticity verification (inbound access logs × vendors' official IP ranges) | ✅ |
 | [`sieve-s2/`](sieve-s2/) | **S2** · Zeek + JA4 TLS-fingerprint detector | ✅ |
 | [`sieve-s3/`](sieve-s3/) | **S3** · merged verdict, unified alerting | ✅ |
+| [`sieve-rep/`](sieve-rep/) | **Reputation** · cross-tenant reputation DB (the moat, optional in S3) | ✅ |
 | [`sieve-verify/`](sieve-verify/) | Accuracy eval + tuning (runs the real S0/S2 code) | ✅ |
 | [`docs/`](docs/) | Purple-team playbook, validation runbook, console design (HTML) | — |
 
@@ -106,7 +107,7 @@ determined ones); DoH/ECH keep narrowing visibility, so block DoH at the firewal
 - [x] S0 DNS layer · S2 TLS layer · S3 merge · verification framework
 - [ ] Real-network validation, produce measured precision
 - [x] S1 crawler authenticity verification (vendor IP JSON)
-- [ ] Cross-tenant domain-reputation / JA4-fingerprint DB (the moat)
+- [x] Cross-tenant reputation / JA4-fingerprint DB (the moat) — prototype: privacy-first contribution + anti-poisoning aggregation + S3 consumption
 - [ ] Hosted version / web console
 
 ## 🤝 Contributing & security

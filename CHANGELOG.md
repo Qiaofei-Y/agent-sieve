@@ -12,6 +12,7 @@
 - **S1** 爬虫真伪核验组件（入站访问日志 → 自称 AI 爬虫的请求用厂商官方 IP 段 JSON 核验；判为 verified / spoofed / unverifiable）。
 - **S2** TLS 指纹层检测器（Zeek + JA4 → 脚本/浏览器判定 + beaconing + 大外发）。
 - **S3** 合并研判层（S2 主判 + ≥2 信号族 + 人类护栏；golden 集 FP=0 FN=0）。
+- **sieve-rep** 跨租户信誉库（护城河）：隐私优先贡献端 + 抗投毒聚合端 + 完整性校验的信誉源；S3 可选消费为附加 `rep` 信号（纯附加，无源时行为不变）。
 - **sieve-verify** 准确率评估框架 + 带误报陷阱的 golden 标注集 + 真实网络自测流量生成器。
 - 文档：攻防手册、交互式验证运行手册、控制台设计稿。
 - `scripts/selftest.py` 回归自测、Makefile、GitHub Actions CI。

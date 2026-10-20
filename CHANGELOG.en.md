@@ -14,6 +14,7 @@ All notable changes to this project are recorded here, following
 - **S2** TLS-fingerprint detector (Zeek + JA4 → script/browser classification + beaconing + large egress).
 - **S3** merge-verdict layer (S2 as primary judge + ≥2 signal families + human guardrail;
   FP=0 FN=0 on the golden set).
+- **sieve-rep** cross-tenant reputation DB (the moat): privacy-first contributor + anti-poisoning aggregator + integrity-checked feed; consumed by S3 as an optional additive `rep` signal (purely additive; no-feed behavior unchanged).
 - **sieve-verify** accuracy-evaluation framework + labeled golden set with false-positive traps +
   real-network self-test traffic generator.
 - Docs: purple-team playbook, interactive validation runbook, console design.

@@ -11,14 +11,18 @@ demo:
 	python3 sieve-s1/sieve_s1.py --demo --no-color
 	python3 sieve-s2/sieve_s2.py --demo --no-color
 	python3 sieve-s3/sieve_s3.py --demo --no-color
+	python3 sieve-rep/contribute.py --demo
+	python3 sieve-rep/aggregate.py --demo
 
 compile:
 	python3 -m py_compile sieve-s0/sieve_s0.py sieve-s1/sieve_s1.py sieve-s2/sieve_s2.py \
-		sieve-s3/sieve_s3.py sieve-verify/evaluate.py \
-		sieve-verify/run_attacks.py scripts/selftest.py
+		sieve-s3/sieve_s3.py sieve-verify/evaluate.py sieve-verify/run_attacks.py \
+		sieve-rep/reputation.py sieve-rep/contribute.py sieve-rep/aggregate.py \
+		sieve-rep/selftest.py scripts/selftest.py
 
 selftest:
 	python3 scripts/selftest.py
+	python3 sieve-rep/selftest.py
 
 test: compile selftest
 	python3 sieve-verify/evaluate.py --no-color

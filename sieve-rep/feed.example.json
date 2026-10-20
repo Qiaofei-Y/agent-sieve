@@ -1,0 +1,39 @@
+{
+  "confirm_min_tenants": 3,
+  "entries": {
+    "domain:ai-tools-hub.net": {
+      "category": "content_farm",
+      "first_seen": "2026-10",
+      "indicator": "ai-tools-hub.net",
+      "kind": "domain",
+      "last_seen": "2026-10",
+      "sightings": 6,
+      "tenants": 6,
+      "verdict": "bad"
+    },
+    "domain:devguide-pro.io": {
+      "category": "scraper",
+      "first_seen": "2026-10",
+      "indicator": "devguide-pro.io",
+      "kind": "domain",
+      "last_seen": "2026-10",
+      "sightings": 4,
+      "tenants": 4,
+      "verdict": "bad"
+    },
+    "ja4:t13d0908h1": {
+      "category": "ja4_script",
+      "first_seen": "2026-09",
+      "indicator": "t13d0908h1",
+      "kind": "ja4",
+      "last_seen": "2026-09",
+      "sightings": 7,
+      "tenants": 7,
+      "verdict": "bad"
+    }
+  },
+  "generated": "2026-10-20T02:54:42Z",
+  "integrity": "b487a83f2fece8b3d55e6aec8f1a821591bc499eb7cdab51e8d14b2afbfb6e67",
+  "schema": 1,
+  "version": 0
+}
