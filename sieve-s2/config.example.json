@@ -1,0 +1,39 @@
+{
+  "_comment": "复制为 config.json。S2 在 S0 的基础上加了 TLS/连接层信号。密钥用环境变量 SIEVE_TG_TOKEN / SIEVE_TG_CHAT。",
+
+  "zeek_logs_dir": "/opt/zeek/logs/current",
+  "domains_file": "../sieve-s0/domains.txt",
+  "fingerprints_file": "ja4_fingerprints.txt",
+  "window_minutes": 60,
+
+  "local_nets": ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12"],
+
+  "telegram": {
+    "token": "",
+    "chat_id": ""
+  },
+
+  "alert_threshold": 50,
+  "review_threshold": 80,
+  "alert_cooldown_minutes": 180,
+
+  "weights": {
+    "non_browser_ja4": 40,
+    "llm_api": 30,
+    "agent_infra": 20,
+    "beaconing": 25,
+    "large_egress": 20,
+    "fanout_burst": 20,
+    "doh_resolver": 15
+  },
+
+  "fanout_threshold": 40,
+  "beaconing_min_hits": 6,
+  "beaconing_max_cv": 0.35,
+  "large_egress_mb": 50,
+
+  "known_ai_clients": [
+    "__comment__: 预期会用 LLM 的设备；对它们免计 llm_api / agent_infra / non_browser_ja4 分。",
+    "192.168.1.50"
+  ]
+}

@@ -1,0 +1,478 @@
+<title>Agent 渗透痕迹手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --plane:#eef1f0; --surface:#ffffff; --surface-2:#f7faf9; --surface-3:#eef2f1;
+  --ink:#0e1412; --ink-2:#4b5551; --ink-3:#838d89;
+  --rule:#e0e6e4; --rule-2:#cdd5d2;
+  --accent:#0d7268; --accent-deep:#084f48; --accent-wash:#e2efed; --on-accent:#fff;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-wash:#e7f6e7; --warning-wash:#fdf3dd; --serious-wash:#fceee7; --critical-wash:#fae6e6;
+  --ink-amber:#8a5f02; --ink-serious:#b9542a; --ink-good:#0a7a0a;
+  /* vantage hues (validated categorical slots) */
+  --v-dns:#2a78d6; --v-flow:#1baf7a; --v-tls:#eda100; --v-host:#e87ba4;
+  --shadow:0 1px 2px rgba(14,20,18,.05); --shadow-pop:0 6px 22px rgba(14,20,18,.14);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783;
+  --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --serious-wash:#33201a; --critical-wash:#331616;
+  --ink-amber:#f0c45a; --ink-serious:#ec835a; --ink-good:#4ec94e;
+  --v-dns:#3987e5; --v-flow:#199e70; --v-tls:#c98500; --v-host:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#090c0b; --surface:#151a18; --surface-2:#1a211f; --surface-3:#222a27;
+  --ink:#f1f5f3; --ink-2:#b2bcb8; --ink-3:#7c8783;
+  --rule:#262f2c; --rule-2:#36413d;
+  --accent:#2fa89a; --accent-deep:#5fc8bb; --accent-wash:#11312d; --on-accent:#04201c;
+  --good-wash:#0f2a10; --warning-wash:#332710; --serious-wash:#33201a; --critical-wash:#331616;
+  --ink-amber:#f0c45a; --ink-serious:#ec835a; --ink-good:#4ec94e;
+  --v-dns:#3987e5; --v-flow:#199e70; --v-tls:#c98500; --v-host:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-pop:0 8px 28px rgba(0,0,0,.6);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:14.5px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+.mono{ font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+.tnum{ font-variant-numeric:tabular-nums; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+@media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+
+.wrap{ max-width:940px; margin:0 auto; padding-inline:20px; padding-block:0 72px; }
+
+/* ── masthead ─────────────────────────────── */
+.mast{ border-bottom:1px solid var(--rule); padding-block:30px 22px; margin-bottom:26px;
+  display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+.logo{ width:40px; height:40px; border-radius:10px; background:var(--accent); flex:none;
+  display:grid; place-items:center; box-shadow:var(--shadow); }
+.eyebrow{ font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-deep); }
+.mast h1{ font-size:27px; font-weight:700; letter-spacing:-.02em; margin:3px 0 7px; text-wrap:balance; }
+.mast .lede{ margin:0; color:var(--ink-2); font-size:14.5px; max-width:64ch; }
+.mast .meta{ margin-top:12px; display:flex; gap:7px 16px; flex-wrap:wrap; font-size:12px; color:var(--ink-3); }
+.mast .meta b{ color:var(--ink-2); font-weight:600; }
+.themebtn{ margin-left:auto; border:1px solid var(--rule-2); background:var(--surface); color:var(--ink-2);
+  font-family:inherit; font-size:12px; font-weight:500; height:30px; padding:0 11px; border-radius:7px;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.themebtn:hover{ border-color:var(--accent); color:var(--ink); }
+
+.note{ background:var(--warning-wash); border:1px solid color-mix(in srgb,var(--warning) 36%,transparent);
+  border-radius:9px; padding:12px 15px; font-size:13px; color:var(--ink-2); margin-bottom:30px;
+  display:flex; gap:10px; }
+.note b{ color:var(--ink); }
+.note svg{ flex:none; color:var(--warning); margin-top:1px; }
+
+/* ── sections ─────────────────────────────── */
+section{ margin-bottom:38px; scroll-margin-top:16px; }
+.sec-h{ display:flex; align-items:baseline; gap:11px; margin-bottom:4px; }
+.sec-n{ font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--accent);
+  border:1px solid var(--accent); border-radius:6px; padding:1px 7px; flex:none; }
+h2{ font-size:20px; font-weight:700; letter-spacing:-.015em; margin:0; text-wrap:balance; }
+.sec-sub{ color:var(--ink-3); font-size:13px; margin:2px 0 18px 46px; }
+h3{ font-size:15px; font-weight:600; margin:24px 0 8px; letter-spacing:-.005em; }
+p{ margin:0 0 12px; color:var(--ink-2); }
+strong{ color:var(--ink); font-weight:600; }
+
+/* ── vantage cards ────────────────────────── */
+.vantages{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.vcard{ background:var(--surface); border:1px solid var(--rule); border-radius:11px; padding:15px 16px; box-shadow:var(--shadow);
+  border-top:3px solid var(--vc); }
+.vcard.dns{ --vc:var(--v-dns); } .vcard.flow{ --vc:var(--v-flow); }
+.vcard.tls{ --vc:var(--v-tls); } .vcard.host{ --vc:var(--v-host); }
+.vcard-h{ display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+.vtag{ font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:#fff; background:var(--vc);
+  padding:2px 7px; border-radius:5px; letter-spacing:.02em; }
+.vcard h3{ margin:0; font-size:14.5px; }
+.vcard .cost{ margin-left:auto; font-size:11.5px; color:var(--ink-3); }
+.vcard p{ font-size:13px; margin:0 0 9px; }
+.vcard ul{ margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-2); }
+.vcard li{ margin-bottom:3px; }
+.vcard li::marker{ color:var(--vc); }
+.seen{ display:flex; gap:12px; margin-top:10px; padding-top:10px; border-top:1px solid var(--rule); font-size:11.5px; }
+.seen div{ flex:1; }
+.seen .k{ color:var(--ink-3); display:block; margin-bottom:2px; letter-spacing:.03em; }
+.seen .yes{ color:var(--ink-good); font-weight:500; }
+.seen .no{ color:var(--ink-serious); font-weight:500; }
+
+/* ── stage timeline ───────────────────────── */
+.stages{ display:flex; flex-direction:column; gap:0; }
+.stage{ display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; padding-block:16px; border-top:1px solid var(--rule); }
+.stage:first-child{ border-top:0; }
+.stage-badge{ display:flex; flex-direction:column; gap:5px; }
+.stage-no{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px; color:var(--accent-deep);
+  background:var(--accent-wash); border-radius:6px; padding:3px 0; text-align:center; }
+.stage-time{ font-size:11px; color:var(--ink-3); text-align:center; }
+.stage-body h3{ margin:0 0 5px; }
+.stage-body p{ margin:0 0 9px; font-size:13.5px; }
+.catch{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+  padding:2px 8px; border-radius:20px; background:var(--good-wash); color:var(--ink-good); margin:0 5px 5px 0; }
+
+/* ── code ─────────────────────────────────── */
+pre{ background:var(--surface-3); border:1px solid var(--rule); border-radius:9px; padding:13px 15px;
+  overflow-x:auto; margin:10px 0 14px; }
+code.blk{ font-family:"IBM Plex Mono",monospace; font-size:12.5px; line-height:1.72; color:var(--ink); white-space:pre; }
+.cmt{ color:var(--ink-3); }
+.kw{ color:var(--accent-deep); } :root[data-theme="dark"] .kw,:root:not([data-theme="light"]) .kw{ color:var(--accent-deep); }
+.str{ color:var(--ink-serious); }
+code.inl{ font-family:"IBM Plex Mono",monospace; font-size:.9em; background:var(--surface-3);
+  padding:1px 5px; border-radius:4px; color:var(--ink); }
+
+/* ── matrix table ─────────────────────────── */
+.scrollx{ overflow-x:auto; border:1px solid var(--rule); border-radius:11px; box-shadow:var(--shadow); }
+table.mx{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:720px; background:var(--surface); }
+.mx thead th{ font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);
+  text-align:left; padding:11px 13px; border-bottom:1px solid var(--rule-2); background:var(--surface-2); white-space:nowrap; }
+.mx td{ padding:11px 13px; border-bottom:1px solid var(--rule); vertical-align:top; }
+.mx tbody tr:last-child td{ border-bottom:0; }
+.mx tbody tr:hover{ background:var(--surface-2); }
+.tid{ font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--accent-deep); white-space:nowrap; }
+.mx .atk{ color:var(--ink); font-weight:500; }
+.mx .atk small{ display:block; color:var(--ink-3); font-weight:400; font-size:11px; margin-top:2px; }
+.vpill{ display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; color:#fff;
+  padding:1px 6px; border-radius:4px; margin:0 3px 3px 0; }
+.vpill.dns{ background:var(--v-dns); } .vpill.flow{ background:var(--v-flow); }
+.vpill.tls{ background:var(--v-tls); } .vpill.host{ background:var(--v-host); }
+.evade{ color:var(--ink-serious); font-size:11.5px; }
+
+/* severity dots for threat model */
+.tm{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.tmc{ background:var(--surface); border:1px solid var(--rule); border-radius:11px; padding:14px 15px; box-shadow:var(--shadow); }
+.tmc .lab{ font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:16px; }
+.tmc.a .lab{ color:var(--good); } .tmc.b .lab{ color:var(--warning); } .tmc.c .lab{ color:var(--critical); }
+.tmc h3{ margin:4px 0 6px; font-size:14px; }
+.tmc p{ font-size:12.5px; margin:0 0 9px; }
+.diff{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.diff.easy{ color:var(--ink-good); } .diff.med{ color:var(--ink-amber); } .diff.hard{ color:var(--ink-serious); }
+
+ul.clean{ margin:0 0 12px; padding-left:19px; color:var(--ink-2); }
+ul.clean li{ margin-bottom:5px; }
+ul.clean li::marker{ color:var(--accent); }
+
+.scoring{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:8px 0 4px; }
+.sch{ background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:12px 13px; box-shadow:var(--shadow); }
+.sch .w{ font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:18px; color:var(--accent-deep); }
+.sch .t{ font-size:12.5px; font-weight:600; margin:2px 0 3px; }
+.sch .d{ font-size:11.5px; color:var(--ink-3); }
+
+.foot{ border-top:1px solid var(--rule); margin-top:12px; padding-top:18px; font-size:12.5px; color:var(--ink-3); }
+.foot a{ color:var(--accent); }
+
+@media (max-width:720px){
+  .vantages,.tm{ grid-template-columns:minmax(0,1fr); }
+  .stage{ grid-template-columns:1fr; gap:8px; }
+  .stage-badge{ flex-direction:row; gap:8px; align-items:center; }
+  .stage-no,.stage-time{ text-align:left; }
+  .sec-sub{ margin-left:0; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>
+    </div>
+    <div style="min-width:0;flex:1">
+      <div class="eyebrow">Sieve Homelab · 紫队手册</div>
+      <h1>AI / Agent 渗透痕迹：自测攻防手册</h1>
+      <p class="lede">在你自己的家庭网或公司内网里，用最小成本建立检测点，再亲手扮演攻击方跑一遍，验证"异常 AI/agent 行为"到底抓不抓得住、什么能骗过它。防守方（红客）视角。</p>
+      <div class="meta">
+        <span><b>范围</b> 仅限你拥有或已获授权的网络</span>
+        <span><b>手法</b> Purple Team · 自攻自检</span>
+        <span><b>更新</b> 2026-10-19</span>
+      </div>
+    </div>
+    <button class="themebtn" id="themeBtn" title="切换明暗">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+      主题
+    </button>
+  </header>
+
+  <div class="note">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.1"/><circle cx="12" cy="12" r="9"/></svg>
+    <div><b>授权边界。</b>本手册所有"攻击"动作都只在你自己拥有或已获书面授权的网络上，对你自己的设备执行，目的是验证检测能力。切勿对第三方网络、他人设备或未授权目标使用其中任何一步。</div>
+  </div>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">01</span><h2>先把"AI 入侵"拆成三个威胁模型</h2></div>
+    <p class="sec-sub">三者在网络层的可检测性天差地别，混为一谈会让你既抓不到真的、又误报一片。</p>
+    <div class="tm">
+      <div class="tmc a">
+        <span class="lab">A</span>
+        <h3>外部 AI 爬虫扒你的服务</h3>
+        <p>GPTBot / ClaudeBot / PerplexityBot 等抓取你暴露在公网的 NAS、博客、反代。也包括<strong>假冒爬虫</strong>——UA 写着 GPTBot，IP 却不在官方段里。</p>
+        <span class="diff easy">难度 · 容易</span>
+      </div>
+      <div class="tmc b">
+        <span class="lab">B</span>
+        <h3>影子 AI 外泄</h3>
+        <p>内网某设备 / 某人把数据持续喂给 LLM API（<code class="inl">api.openai.com</code> 等），或本地跑的 agent 在外发内容。你最该先解决的一类。</p>
+        <span class="diff med">难度 · 中</span>
+      </div>
+      <div class="tmc c">
+        <span class="lab">C</span>
+        <h3>自主 agent / AI 驱动入侵</h3>
+        <p>电线上它和普通脚本入侵<strong>几乎一样</strong>——AI 在攻击者云端，过来的只是请求。出卖它的是"机器节奏"，不是"AI"本身。别过度宣称。</p>
+        <span class="diff hard">难度 · 难</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">02</span><h2>四个观测点，各自看得到什么</h2></div>
+    <p class="sec-sub">在路由器这个位置你只有元数据。按部署成本从低到高排列，颜色在后面的测试矩阵里复用。</p>
+    <div class="vantages">
+
+      <div class="vcard dns">
+        <div class="vcard-h"><span class="vtag">DNS</span><h3>Pi-hole / AdGuard Home</h3><span class="cost">成本 · 极低</span></div>
+        <p>当全网 DNS，记录每台设备每一次域名查询。抓威胁 B 和用系统 DNS 的本地 agent 最快的办法。</p>
+        <ul>
+          <li>匹配已知 LLM API / agent 域名清单</li>
+          <li>发现从未见过的新域名（shadow source）</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">能看到</span><span class="yes">查询的域名、哪台设备、频率</span></div>
+          <div><span class="k">看不到</span><span class="no">走 DoH/DoT 的客户端（直接绕过）</span></div>
+        </div>
+      </div>
+
+      <div class="vcard flow">
+        <div class="vcard-h"><span class="vtag">FLOW</span><h3>路由器连接日志 / conntrack</h3><span class="cost">成本 · 低</span></div>
+        <p>每条连接的 IP:端口、字节数、时间戳。即便 DNS 被绕过，IP 层仍然留痕——按 IP 反查 LLM 厂商归属。</p>
+        <ul>
+          <li>定时回连（beaconing）的规律间隔</li>
+          <li>异常外发体量 / 整站遍历</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">能看到</span><span class="yes">对端 IP、流量大小、节奏</span></div>
+          <div><span class="k">看不到</span><span class="no">具体内容、具体 URL</span></div>
+        </div>
+      </div>
+
+      <div class="vcard tls">
+        <div class="vcard-h"><span class="vtag">TLS</span><h3>镜像口 + Zeek（JA4 指纹）</h3><span class="cost">成本 · 中</span></div>
+        <p>交换机 SPAN 口把流量镜像给一块树莓派跑 Zeek，提取 TLS 握手的 JA4 指纹——它由网络栈决定，不受伪造 UA 影响。</p>
+        <ul>
+          <li>python/Go/curl 的指纹 ≠ 真浏览器</li>
+          <li>SNI（除非对端启用 ECH）、证书、QUIC</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">能看到</span><span class="yes">客户端是不是脚本、连的域名</span></div>
+          <div><span class="k">看不到</span><span class="no">被 curl_cffi 伪造的浏览器指纹</span></div>
+        </div>
+      </div>
+
+      <div class="vcard host">
+        <div class="vcard-h"><span class="vtag">HOST</span><h3>端点 · OpenSnitch / Little Snitch</h3><span class="cost">成本 · 中（需装）</span></div>
+        <p>装得上端点的话，这是唯一能把流量落到<strong>进程</strong>的观测点——是哪个二进制、哪个脚本在外连。</p>
+        <ul>
+          <li>进程级出站白名单 / 告警</li>
+          <li>解密前的内容（本机可见）</li>
+        </ul>
+        <div class="seen">
+          <div><span class="k">能看到</span><span class="yes">进程、命令行、完整目的地</span></div>
+          <div><span class="k">看不到</span><span class="no">装不了端点的设备（IoT、访客机）</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">03</span><h2>两条必须先接受的物理边界</h2></div>
+    <p class="sec-sub">不认清这两点，后面所有检测都是自欺。</p>
+
+    <h3>① 没有 MITM 就只有元数据</h3>
+    <p>流量是 TLS 加密的。不在每台设备装你的根证书做中间人解密，你永远看不到"读了哪个页面、发了什么内容"。家用场景不建议全网 MITM（破坏性大、风险高），所以把产品定位成<strong>"异常行为检测"，不是"内容审查"</strong>。</p>
+
+    <h3>② DoH/DoT 和 ECH 正在收紧视野</h3>
+    <ul class="clean">
+      <li><strong>DoH/DoT</strong>：客户端自带加密 DNS 会直接绕过 Pi-hole。这是头号敌人——必须在防火墙封掉 853 端口、拦截已知 DoH 解析器域名，把 DNS 强制收回到你手里，否则 DNS 这层形同虚设。</li>
+      <li><strong>ECH</strong>（RFC 9849，2026-03 定稿）会加密 SNI，连域名都看不到。目前服务端几乎只有 Cloudflare 上线，大部分站点 SNI 仍可见——但这是单向趋势，别把架构押在 SNI 可见上。</li>
+      <li><strong>指纹可伪造</strong>：<code class="inl">curl_cffi --impersonate chrome</code> / <code class="inl">tls-client</code> 能复刻浏览器 JA4。所以 JA4 抓得住图省事的 agent，抓不住刻意伪装的——它是信号之一，不是终判。</li>
+    </ul>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">04</span><h2>从最小做起：四阶段落地</h2></div>
+    <p class="sec-sub">每个阶段都能独立交付价值，不必等全套建成。</p>
+    <div class="stages">
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S0</div><div class="stage-time">一个下午</div></div>
+        <div class="stage-body">
+          <h3>Pi-hole 当全网 DNS + 域名清单</h3>
+          <p>路由器 DHCP 把 DNS 指向 Pi-hole，查询日志里匹配约 40 个已知 LLM API / agent 域名。零额外硬件（树莓派或一台闲置机即可）。</p>
+          <span class="catch">✓ 威胁 B · 影子 AI</span><span class="catch">✓ 本地 agent（系统 DNS）</span>
+          <pre><code class="blk"><span class="cmt"># 从 Pi-hole 查询日志里捞 LLM / agent 流量（最小可用）</span>
+<span class="kw">sqlite3</span> /etc/pihole/pihole-FTL.db \
+  <span class="str">"SELECT datetime(timestamp,'unixepoch','localtime') t,
+          client, domain
+   FROM queries
+   WHERE domain LIKE '%openai.com'
+      OR domain LIKE '%anthropic.com'
+      OR domain LIKE '%generativelanguage.googleapis%'
+      OR domain LIKE '%api.perplexity.ai'
+   ORDER BY timestamp DESC LIMIT 50;"</span></code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S1</div><div class="stage-time">一天</div></div>
+        <div class="stage-body">
+          <h3>对暴露的服务核验爬虫真伪</h3>
+          <p>对你公网可达的反代 / NAS 访问日志，拉厂商官方 IP 段 JSON 做正向核验——UA 声称是 GPTBot，但源 IP 不在 <code class="inl">openai.com/gptbot.json</code> 里，就是冒充。</p>
+          <span class="catch">✓ 威胁 A · 真假爬虫</span>
+          <pre><code class="blk"><span class="cmt"># 官方 IP 段 JSON（定时拉取，勿硬编码）</span>
+openai     → https://openai.com/gptbot.json
+anthropic  → https://claude.com/crawling/bots.json
+perplexity → https://www.perplexity.ai/perplexitybot.json
+
+<span class="cmt"># 现成开源工具：按日更新的 IP 段 + 核验脚本</span>
+github.com/ramhee98/ai-crawler-ipranges
+github.com/ayronjins/ai-crawler-verify</code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S2</div><div class="stage-time">一个周末</div></div>
+        <div class="stage-body">
+          <h3>镜像口 + Zeek：抓脚本客户端和回连</h3>
+          <p>有网管交换机就开 SPAN 口，没有就用支持镜像的软路由，把流量喂给树莓派上的 Zeek。从 <code class="inl">ssl.log</code> 取 JA4，从 <code class="inl">conn.log</code> 算回连节奏。</p>
+          <span class="catch">✓ 威胁 C 的可检测部分</span><span class="catch">✓ 脚本 vs 浏览器</span>
+          <pre><code class="blk"><span class="cmt"># Zeek 起监听（Zeek 5.2+ 原生支持 QUIC）</span>
+<span class="kw">zeek</span> -i eth0 LogAscii::use_json=T
+
+<span class="cmt"># 从 ssl.log 里找非浏览器 JA4（python/go/curl 的指纹库比对）</span>
+<span class="kw">jq</span> -r <span class="str">'select(.ja4 != null) | [.ts,.server_name,.ja4] | @tsv'</span> ssl.log</code></pre>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage-badge"><div class="stage-no">S3</div><div class="stage-time">增量</div></div>
+        <div class="stage-body">
+          <h3>三路汇总 + 打分 + 告警</h3>
+          <p>DNS / FLOW / TLS 三源按设备聚合，套下面的评分规则，超阈值推告警（Telegram / 邮件）。这一步才像个产品。</p>
+          <span class="catch">✓ 可持续运营</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">05</span><h2>紫队测试矩阵：自攻自检</h2></div>
+    <p class="sec-sub">在自己网里亲手跑左边的"攻击"，确认对应观测点真的亮灯；再看"能骗过它的手法"，知道盲区在哪。全部对你自己的设备执行。</p>
+    <div class="scrollx">
+      <table class="mx">
+        <thead>
+          <tr><th>ID</th><th>你扮攻击方做什么（自测）</th><th>应命中观测点</th><th>预期信号</th><th>什么能骗过它</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tid">T1</td>
+            <td class="atk">影子外泄模拟<small>从一台 LAN 机 curl 自己的测试数据到 api.openai.com</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span></td>
+            <td>DNS 命中 LLM 域名 + 到 OpenAI IP 的新连接</td>
+            <td class="evade">该机改用 DoH → DNS 盲，但 FLOW 仍见 IP</td>
+          </tr>
+          <tr>
+            <td class="tid">T2</td>
+            <td class="atk">脚本扒站模拟<small>python httpx 循环抓你自己的内网 wiki</small></td>
+            <td><span class="vpill tls">TLS</span><span class="vpill flow">FLOW</span></td>
+            <td>JA4 = python 栈；整站无去重遍历；均匀间隔</td>
+            <td class="evade">curl_cffi 伪装 Chrome JA4 → 只剩节奏可疑</td>
+          </tr>
+          <tr>
+            <td class="tid">T3</td>
+            <td class="atk">假冒爬虫模拟<small>手机上 curl -H "User-Agent: GPTBot" 访问你的反代</small></td>
+            <td><span class="vpill host">LOG</span></td>
+            <td>IP 核验失败：不在 gptbot.json 段内</td>
+            <td class="evade">攻击者租用相近 ASN 也仍过不了正向核验</td>
+          </tr>
+          <tr>
+            <td class="tid">T4</td>
+            <td class="atk">DoH 绕过模拟<small>把一台机的 DNS 指向 Cloudflare DoH</small></td>
+            <td><span class="vpill dns">DNS</span></td>
+            <td>Pi-hole 出现盲区；你的 853/DoH 拦截应告警</td>
+            <td class="evade">若未封 DoH → 完全静默，这正是要验证的洞</td>
+          </tr>
+          <tr>
+            <td class="tid">T5</td>
+            <td class="atk">本地 agent 模拟<small>LAN 机上跑一个 browser-use / Claude agent 做任务</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span><span class="vpill tls">TLS</span></td>
+            <td>短时间爆发式连多个域名 + LLM API 调用</td>
+            <td class="evade">agent 走单一代理出口 → 域名扇出被收敛</td>
+          </tr>
+          <tr>
+            <td class="tid">T6</td>
+            <td class="atk">回连/C2 模拟<small>一个每 N 秒回连一次的小脚本</small></td>
+            <td><span class="vpill flow">FLOW</span></td>
+            <td>conn.log 里高度规律的等间隔连接</td>
+            <td class="evade">加抖动(jitter)/随机间隔 → 规律性被稀释</td>
+          </tr>
+          <tr>
+            <td class="tid">T7</td>
+            <td class="atk">IoT 盲区模拟<small>装不了端点的设备（摄像头/电视）发起外连</small></td>
+            <td><span class="vpill dns">DNS</span><span class="vpill flow">FLOW</span></td>
+            <td>只能靠网络层——验证 HOST 观测点的覆盖缺口</td>
+            <td class="evade">设备硬编码 DoH → 需网关层强制拦截</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">06</span><h2>打分规则：把信号变成一个数</h2></div>
+    <p class="sec-sub">单条信号都会误报。按设备在时间窗内累加权重，超阈值才告警，压住噪声。</p>
+    <div class="scoring">
+      <div class="sch"><div class="w">+40</div><div class="t">非浏览器 JA4</div><div class="d">python/go/curl 栈直连外部</div></div>
+      <div class="sch"><div class="w">+30</div><div class="t">LLM API 域名</div><div class="d">非已知 AI 客户端的设备发起</div></div>
+      <div class="sch"><div class="w">+25</div><div class="t">规律回连</div><div class="d">等间隔 + 低抖动 beaconing</div></div>
+      <div class="sch"><div class="w">+20</div><div class="t">域名扇出爆发</div><div class="d">短时连大量陌生域名</div></div>
+      <div class="sch"><div class="w">+20</div><div class="t">假冒爬虫</div><div class="d">UA 声称 bot，IP 核验失败</div></div>
+      <div class="sch"><div class="w">+15</div><div class="t">DoH 绕过企图</div><div class="d">连已知 DoH 解析器</div></div>
+    </div>
+    <p style="margin-top:14px"><strong>建议阈值</strong>：家庭网 ≥ 50 推通知、≥ 80 需人工查看；公司内网按设备基线调整。先跑两周<strong>纯观察模式</strong>建立每台设备的正常画像，再开告警——否则第一周会被自己的正常流量淹没。</p>
+  </section>
+
+  <!-- 07 -->
+  <section>
+    <div class="sec-h"><span class="sec-n">07</span><h2>公司内网的三点不同</h2></div>
+    <ul class="clean">
+      <li><strong>观测点更好拿</strong>：有 MDM 就能全网铺端点(HOST)，有网管交换机就有现成 SPAN 口，这是家庭网没有的优势。</li>
+      <li><strong>基线更重要</strong>：员工本来就在用一堆 SaaS，LLM 域名命中率天然高。重点从"有没有"转向"哪台设备异常地多、哪个账号在非工作时间批量外发"。</li>
+      <li><strong>合规先行</strong>：员工流量监控涉及隐私与劳动法。部署前先过内部政策与知情同意，别把技术方案直接当成可落地方案。</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    <p><strong>关联文档</strong>：本手册对应产品 <em>Sieve · AI 信源治理</em> 的检测侧。配套的信源治理控制台见同目录 <code class="inl">sieve-console.html</code>。</p>
+    <p>参考：AI 爬虫官方 IP JSON（OpenAI / Anthropic / Perplexity）· JA4 TLS 指纹 · Zeek 5.2+ · Pi-hole · RFC 9849 (ECH, 2026-03)。本页为自测方法论，命令为示意，按你的环境调整。</p>
+  </div>
+
+</div>
+
+<script>
+document.getElementById("themeBtn").addEventListener("click",function(){
+  var r=document.documentElement, c=r.getAttribute("data-theme");
+  if(!c){ c=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"; }
+  r.setAttribute("data-theme", c==="dark"?"light":"dark");
+});
+</script>

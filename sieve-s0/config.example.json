@@ -1,0 +1,34 @@
+{
+  "_comment": "复制为 config.json 后按需修改。密钥建议改用环境变量 SIEVE_TG_TOKEN / SIEVE_TG_CHAT，优先级高于本文件。",
+
+  "pihole_db": "/etc/pihole/pihole-FTL.db",
+  "window_minutes": 60,
+
+  "telegram": {
+    "token": "",
+    "chat_id": ""
+  },
+
+  "alert_threshold": 50,
+  "review_threshold": 80,
+  "alert_cooldown_minutes": 180,
+
+  "weights": {
+    "llm_api": 30,
+    "agent_infra": 20,
+    "doh_resolver": 15,
+    "fanout_burst": 20,
+    "beaconing": 25,
+    "shadow_source": 20
+  },
+
+  "fanout_threshold": 40,
+  "beaconing_min_hits": 6,
+  "beaconing_max_cv": 0.35,
+
+  "known_ai_clients": [
+    "__comment__: 填入预期就会访问 LLM 的设备（IP / 主机名 / client 名），对它们免计 llm_api 与 agent_infra 分，减少误报。",
+    "192.168.1.50",
+    "mac-studio.lan"
+  ]
+}

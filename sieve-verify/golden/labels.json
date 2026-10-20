@@ -1,0 +1,52 @@
+{
+  "10.0.0.23": {
+    "truth": "malicious",
+    "scenario": "T1 影子外泄",
+    "note": "python 脚本把数据发给 api.openai.com"
+  },
+  "10.0.0.77": {
+    "truth": "malicious",
+    "scenario": "T5 本地 agent",
+    "note": "browser-use 类 agent：脚本指纹+LLM+扇出"
+  },
+  "10.0.0.99": {
+    "truth": "malicious",
+    "scenario": "T6 C2 回连",
+    "note": "脚本等间隔回连同一外部 IP"
+  },
+  "10.0.0.88": {
+    "truth": "malicious",
+    "scenario": "T4 DoH 绕过",
+    "note": "设备连 Cloudflare DoH，试图绕过你的 DNS"
+  },
+  "10.0.0.11": {
+    "truth": "benign",
+    "scenario": "B1 浏览器用ChatGPT",
+    "note": "人类开发者浏览器用 ChatGPT —— DNS 层会误判"
+  },
+  "10.0.0.12": {
+    "truth": "benign",
+    "scenario": "B2 备份心跳",
+    "note": "Dropbox/备份类规律心跳 —— beaconing 误报陷阱"
+  },
+  "10.0.0.13": {
+    "truth": "benign",
+    "scenario": "B3 CDN扇出",
+    "note": "访问重 CDN 站点 —— fanout 误报陷阱"
+  },
+  "10.0.0.14": {
+    "truth": "benign",
+    "scenario": "B4 云盘上传",
+    "note": "上传大文件到云盘 —— large_egress 误报陷阱"
+  },
+  "10.0.0.15": {
+    "truth": "benign",
+    "scenario": "B5 正常浏览",
+    "note": "日常浏览，无敏感域名"
+  },
+  "10.0.0.50": {
+    "truth": "benign",
+    "scenario": "B6 白名单开发机",
+    "note": "预期会用 LLM 的开发机，应在白名单里免分"
+  }
+}

@@ -1,0 +1,75 @@
+# Sieve S0 — 已知 LLM / Agent / DoH 域名清单
+# 格式：[分类] 开头的行为分区头，其下每行一个域名后缀。
+# 匹配规则：后缀匹配（带点边界），例如 openai.com 命中 api.openai.com。
+# 自行增删即可；建议定期更新。
+
+[llm_api]
+# ── 海外 ──
+openai.com
+chatgpt.com
+oaistatic.com
+anthropic.com
+claude.ai
+claude.com
+generativelanguage.googleapis.com
+aiplatform.googleapis.com
+gemini.google.com
+api.perplexity.ai
+perplexity.ai
+api.mistral.ai
+mistral.ai
+api.cohere.ai
+cohere.com
+api.deepseek.com
+deepseek.com
+api.x.ai
+openrouter.ai
+api.together.xyz
+together.ai
+api.groq.com
+groq.com
+replicate.com
+api-inference.huggingface.co
+openai.azure.com
+# ── 国内 ──
+dashscope.aliyuncs.com
+ark.cn-beijing.volces.com
+open.bigmodel.cn
+api.moonshot.cn
+api.baichuan-ai.com
+qianfan.baidubce.com
+hunyuan.tencentcloudapi.com
+spark-api.xf-yun.com
+api.minimax.chat
+
+[agent_infra]
+# agent / 自动化抓取相关基础设施
+browserbase.com
+browserless.io
+smithery.ai
+smith.langchain.com
+langchain.com
+firecrawl.dev
+serpapi.com
+e2b.dev
+modal.com
+apify.com
+scrapingbee.com
+brightdata.com
+zenrows.com
+mcp.so
+
+[doh_resolver]
+# 已知 DoH / DoT 解析器——客户端连这些 = 试图绕过你的 DNS
+cloudflare-dns.com
+mozilla.cloudflare-dns.com
+chrome.cloudflare-dns.com
+one.one.one.one
+dns.google
+dns.quad9.net
+doh.opendns.com
+dns.nextdns.io
+doh.cleanbrowsing.org
+dns.adguard-dns.com
+dns.adguard.com
+doh.dns.sb

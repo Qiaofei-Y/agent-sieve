@@ -1,0 +1,23 @@
+{
+  "_comment": "复制为 config.json。S3 合并 S0(DNS)+S2(TLS) 两路结果。密钥用环境变量 SIEVE_TG_TOKEN / SIEVE_TG_CHAT。",
+
+  "pihole_db": "/etc/pihole/pihole-FTL.db",
+  "zeek_logs_dir": "/opt/zeek/logs/current",
+  "domains_file": "../sieve-s0/domains.txt",
+  "fingerprints_file": "../sieve-s2/ja4_fingerprints.txt",
+  "window_minutes": 60,
+
+  "telegram": { "token": "", "chat_id": "" },
+
+  "alert_cooldown_minutes": 180,
+
+  "_merge_comment": "下列参数来自 sieve-verify 的实测结论，别随意回退成『两分相加』。",
+  "union_threshold": 55,
+  "s2_automated_min": 40,
+  "alert_cooldown_minutes_note": "告警去重冷却",
+
+  "known_ai_clients": [
+    "__comment__: 预期会用 LLM 的设备；S0/S2 都对它们免计 llm/agent/脚本 分。",
+    "192.168.1.50"
+  ]
+}
